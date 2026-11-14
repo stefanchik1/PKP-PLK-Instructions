@@ -42,6 +42,7 @@ public class PdfViewerActivity extends Activity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(bg);
+        root.setPadding(dp(10), dp(8), dp(10), dp(8));
         root.setOnApplyWindowInsetsListener((view, insets) -> {
             view.setPadding(0, insets.getSystemWindowInsetTop(), 0, insets.getSystemWindowInsetBottom());
             return insets;
@@ -49,9 +50,9 @@ public class PdfViewerActivity extends Activity {
 
         header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setPadding(dp(14), dp(7), dp(16), dp(7));
-        header.setBackgroundColor(surface);
-        header.setElevation(dp(2));
+        header.setPadding(dp(12), dp(5), dp(14), dp(5));
+        header.setBackground(round(surface, dp(18), line));
+        header.setElevation(dp(4));
 
         TextView back = new TextView(this);
         back.setText("‹");
@@ -70,19 +71,21 @@ public class PdfViewerActivity extends Activity {
         title.setTypeface(null, android.graphics.Typeface.BOLD);
         title.setMaxLines(1);
         TextView subtitle = new TextView(this);
-        subtitle.setText("PDF READER  ·  PKP PLK");
+        subtitle.setText("ЧИТАЧ PDF  ·  PKP PLK");
         subtitle.setTextColor(muted);
         subtitle.setTextSize(10);
         titleBox.addView(title);
         titleBox.addView(subtitle);
         header.addView(titleBox, new LinearLayout.LayoutParams(0, -2, 1));
-        root.addView(header, new LinearLayout.LayoutParams(-1, -2));
+        LinearLayout.LayoutParams headerParams = new LinearLayout.LayoutParams(-1, dp(58));
+        headerParams.bottomMargin = dp(10);
+        root.addView(header, headerParams);
 
         pageBar = new LinearLayout(this);
         pageBar.setGravity(Gravity.CENTER_VERTICAL);
-        pageBar.setPadding(dp(16), dp(9), dp(16), dp(9));
-        pageBar.setBackgroundColor(surface);
-        pageBar.setElevation(dp(1));
+        pageBar.setPadding(dp(12), dp(7), dp(12), dp(7));
+        pageBar.setBackground(round(surface, dp(18), line));
+        pageBar.setElevation(dp(3));
 
         previous = button("‹", true);
         previous.setOnClickListener(v -> jumpToCurrent(-1));
@@ -113,7 +116,7 @@ public class PdfViewerActivity extends Activity {
         pageBar.addView(pageInput, inputParams);
 
         pageCountLabel = new TextView(this);
-        pageCountLabel.setText("/ —");
+        pageCountLabel.setText("СТОРІНКА  /  —");
         pageCountLabel.setTextColor(muted);
         pageCountLabel.setTextSize(13);
         pageBar.addView(pageCountLabel, new LinearLayout.LayoutParams(0, -2, 1));
@@ -121,7 +124,9 @@ public class PdfViewerActivity extends Activity {
         next = button("›", true);
         next.setOnClickListener(v -> jumpToCurrent(1));
         pageBar.addView(next, new LinearLayout.LayoutParams(dp(42), dp(40)));
-        root.addView(pageBar, new LinearLayout.LayoutParams(-1, -2));
+        LinearLayout.LayoutParams pageBarParams = new LinearLayout.LayoutParams(-1, dp(56));
+        pageBarParams.bottomMargin = dp(8);
+        root.addView(pageBar, pageBarParams);
 
         loading = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         loading.setIndeterminate(true);
@@ -134,9 +139,9 @@ public class PdfViewerActivity extends Activity {
 
         tools = new LinearLayout(this);
         tools.setGravity(Gravity.CENTER);
-        tools.setPadding(dp(12), dp(9), dp(12), dp(9));
-        tools.setBackgroundColor(surface);
-        tools.setElevation(dp(5));
+        tools.setPadding(dp(14), dp(8), dp(14), dp(8));
+        tools.setBackground(round(surface, dp(22), line));
+        tools.setElevation(dp(8));
 
         Button zoomOut = button("−", false);
         zoomOut.setOnClickListener(v -> zoomBy(0.8f));
@@ -151,12 +156,14 @@ public class PdfViewerActivity extends Activity {
         Button zoomIn = button("+", false);
         zoomIn.setOnClickListener(v -> zoomBy(1.25f));
 
-        tools.addView(zoomOut, new LinearLayout.LayoutParams(dp(54), dp(42)));
-        LinearLayout.LayoutParams fitParams = new LinearLayout.LayoutParams(dp(150), dp(42));
+        tools.addView(zoomOut, new LinearLayout.LayoutParams(dp(48), dp(44)));
+        LinearLayout.LayoutParams fitParams = new LinearLayout.LayoutParams(0, dp(44), 1f);
         fitParams.setMargins(dp(12), 0, dp(12), 0);
         tools.addView(fit, fitParams);
-        tools.addView(zoomIn, new LinearLayout.LayoutParams(dp(54), dp(42)));
-        root.addView(tools, new LinearLayout.LayoutParams(-1, -2));
+        tools.addView(zoomIn, new LinearLayout.LayoutParams(dp(48), dp(44)));
+        LinearLayout.LayoutParams toolsParams = new LinearLayout.LayoutParams(-1, dp(60));
+        toolsParams.topMargin = dp(8);
+        root.addView(tools, toolsParams);
 
         setContentView(root);
         if (landscape) {
@@ -191,7 +198,7 @@ public class PdfViewerActivity extends Activity {
                 totalPages = pages;
                 documentReady = true;
                 loading.setVisibility(View.GONE);
-                pageCountLabel.setText("/ " + pages);
+                pageCountLabel.setText("СТОРІНКА  /  " + pages);
                 updatePageControls(0);
                 if (landscape) {
                     pdfView.post(() -> pdfView.resetZoom());
@@ -267,7 +274,7 @@ public class PdfViewerActivity extends Activity {
     private void updatePageControls(int page) {
         runOnUiThread(() -> {
             pageInput.setText(String.valueOf(page + 1));
-            pageCountLabel.setText("/ " + totalPages);
+            pageCountLabel.setText("СТОРІНКА  /  " + totalPages);
             previous.setEnabled(page > 0);
             next.setEnabled(totalPages > 0 && page < totalPages - 1);
             previous.setAlpha(page > 0 ? 1f : .38f);
@@ -311,7 +318,8 @@ public class PdfViewerActivity extends Activity {
         b.setMinHeight(0);
         b.setMinimumHeight(0);
         b.setPadding(0, 0, 0, 0);
-        b.setBackground(round(surfaceAlt, dp(12), line));
+        b.setBackground(round(surfaceAlt, dp(14), line));
+        b.setElevation(dp(1));
         return b;
     }
 
