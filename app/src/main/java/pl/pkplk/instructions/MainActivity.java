@@ -2,6 +2,7 @@ package pl.pkplk.instructions;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -18,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 public class MainActivity extends Activity {
+    private static final int PICK_PDF_REQUEST = 4102;
     private WebView web;
     private final Handler main = new Handler(Looper.getMainLooper());
     private static final String ROOT = "https://www.plk-sa.pl/klienci-i-kontrahenci/akty-prawne-i-przepisy/instrukcje-pkp-polskich-linii-kolejowych-sa";
@@ -45,6 +47,14 @@ public class MainActivity extends Activity {
     }
 
     private class AppBridge {
+        @JavascriptInterface public void addOwnInstruction() {
+            runOnUiThread(() -> {
+                Intent pick = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                pick.addCategory(Intent.CATEGORY_OPENABLE);
+                pick.setType("application/pdf");
+                startActivityForResult(pick, PICK_PDF_REQUEST);
+            });
+        }
         @JavascriptInterface public void refreshCatalog() {
             new Thread(() -> {
                 JSONArray result = new JSONArray(); int ok = 0;
@@ -124,6 +134,19 @@ public class MainActivity extends Activity {
             });
         }
 
+        @JavascriptInterface public void renameDownloadedDocument(String filename, String newTitle) {
+            if (newTitle == null || newTitle.trim().isEmpty()) return;
+            JSONArray a=readSaved();
+            for(int i=0;i<a.length();i++){
+                JSONObject x=a.optJSONObject(i);
+                if(x!=null && filename.equals(x.optString("file"))) {
+                    try { x.put("title",newTitle.trim()); } catch(Exception ignored) {}
+                }
+            }
+            getPreferences(MODE_PRIVATE).edit().putString("saved_pdfs",a.toString()).apply();
+            main.post(() -> js("window.onOfflineList && window.onOfflineList(" + a + ")"));
+        }
+
         @JavascriptInterface public void deleteDownloadedDocument(String filename) {
             File f = new File(new File(getFilesDir(), "plk_documents"), new File(filename).getName());
             if (f.isFile()) f.delete();
@@ -132,6 +155,54 @@ public class MainActivity extends Activity {
             getPreferences(MODE_PRIVATE).edit().putString("saved_pdfs",a.toString()).apply();
             main.post(() -> js("window.onOfflineList && window.onOfflineList(" + a + ")"));
         }
+    }
+
+
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode!=PICK_PDF_REQUEST || resultCode!=RESULT_OK || data==null || data.getData()==null) return;
+        Uri uri=data.getData();
+        new Thread(() -> {
+            try {
+                File dir=new File(getFilesDir(),"plk_documents");
+                if(!dir.exists()&&!dir.mkdirs()) throw new IOException("Nie można utworzyć katalogu");
+                String displayName="Własna instrukcja.pdf";
+                android.database.Cursor cursor=getContentResolver().query(uri,null,null,null,null);
+                if(cursor!=null) {
+                    try {
+                        int col=cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                        if(cursor.moveToFirst()&&col>=0) displayName=cursor.getString(col);
+                    } finally { cursor.close(); }
+                }
+                String key="custom_"+System.currentTimeMillis();
+                File target=new File(dir,key+".pdf");
+                try(InputStream in=getContentResolver().openInputStream(uri); FileOutputStream out=new FileOutputStream(target)) {
+                    if(in==null) throw new IOException("Nie można otworzyć pliku");
+                    byte[] buf=new byte[16384]; int n; boolean header=false; long total=0;
+                    while((n=in.read(buf))!=-1) {
+                        if(!header) {
+                            if(n<5||buf[0]!='%'||buf[1]!='P'||buf[2]!='D'||buf[3]!='F'||buf[4]!='-')
+                                throw new IOException("Wybrany plik nie jest poprawnym PDF");
+                            header=true;
+                        }
+                        total+=n;
+                        if(total>100L*1024*1024) throw new IOException("Limit pliku: 100 MB");
+                        out.write(buf,0,n);
+                    }
+                }
+                JSONObject item=new JSONObject();
+                item.put("title",displayName.replaceAll("(?i)\\.pdf$",""));
+                item.put("file",target.getName()); item.put("url","");
+                item.put("size",target.length()); item.put("savedAt",System.currentTimeMillis());
+                item.put("custom",true);
+                JSONArray all=readSaved(); all.put(item);
+                getPreferences(MODE_PRIVATE).edit().putString("saved_pdfs",all.toString()).apply();
+                main.post(()->js("window.onOfflineList && window.onOfflineList("+all+")"));
+            } catch(Exception e) {
+                String msg=e.getMessage()==null?"Błąd importu":e.getMessage();
+                main.post(()->js("window.onPdfError && window.onPdfError('Własna instrukcja',"+JSONObject.quote(msg)+")"));
+            }
+        }).start();
     }
 
     private void js(String code) { if (web != null) web.evaluateJavascript(code, null); }
