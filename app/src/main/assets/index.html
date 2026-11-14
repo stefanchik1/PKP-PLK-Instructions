@@ -107,6 +107,99 @@ body{background:var(--bg);color:var(--text);transition:background .2s ease,color
 }
 @media(min-width:600px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 
+
+/* Selected concept 4 — Modern Dark: stronger card hierarchy and polished mobile dashboard */
+:root{
+ --bg:#080d16;--panel:#111a28;--panel2:#19283a;--text:#f2f6fc;
+ --muted:#91a2b8;--line:#26364b;--accent:#4da3ff;--good:#52d6a0;
+ --surface-shadow:0 12px 30px rgba(0,0,0,.24);
+}
+body{
+ background:
+  radial-gradient(ellipse at 8% -10%,rgba(35,105,170,.20),transparent 38%),
+  radial-gradient(ellipse at 100% 20%,rgba(25,70,125,.13),transparent 35%),
+  var(--bg);
+ color:var(--text);
+}
+.wrap{max-width:820px;padding-left:18px;padding-right:18px}
+.top{padding:20px 2px 22px}
+.logo{
+ width:50px;height:50px;border-radius:17px;
+ background:linear-gradient(145deg,#399cf0,#145184);
+ border:1px solid rgba(255,255,255,.13);
+ box-shadow:0 8px 24px rgba(30,130,220,.25);
+}
+.brand b{font-size:17px;font-weight:800;letter-spacing:-.35px}
+.brand small{color:#9eb2c9;font-size:11px}
+.hero{
+ padding:25px 22px;border-radius:24px;
+ border:1px solid rgba(126,185,239,.19);
+ background:
+  radial-gradient(circle at 90% 0%,rgba(88,168,238,.34),transparent 38%),
+  linear-gradient(135deg,#10243b 0%,#153d61 56%,#174b73 100%);
+ box-shadow:0 16px 34px rgba(0,0,0,.22);
+}
+.hero h1{font-size:26px;font-weight:800;letter-spacing:-.8px}
+.hero p{font-size:13px;line-height:1.65;color:#d6e8f8}
+.search{
+ background:#111b29;border:1px solid #2b4058;border-radius:17px;
+ min-height:56px;box-shadow:0 8px 22px rgba(0,0,0,.15);
+}
+.search input{color:#f3f7fc}
+.search input::placeholder{color:#8295ac}
+.tabs{gap:8px}
+.tab{background:#101a28;border:1px solid #26374c;border-radius:12px;color:#9aadc2}
+.tab.active{background:#1a3048;border-color:#438ed0;color:#eaf5ff}
+.section{margin:24px 2px 12px}
+.section h2{font-size:17px;font-weight:800;letter-spacing:-.35px}
+.grid{gap:12px}
+.cat{
+ min-height:142px;padding:16px;border-radius:19px;
+ background:linear-gradient(155deg,#152235,#101a28);
+ border:1px solid #293b52;
+ box-shadow:0 9px 22px rgba(0,0,0,.18);
+}
+.cat strong{font-size:25px;color:#65b4ff;font-weight:850;letter-spacing:-.8px}
+.cat span{font-size:12px;line-height:1.55;color:#9eb0c5}
+.cat .iconbtn{background:#1a2a3d;border-color:#31465e;color:#b9d9f7}
+.cat .action{
+ background:#1b344e;color:#8fc8ff;border:1px solid #315579;
+ border-radius:11px;font-weight:750;
+}
+.doc{
+ background:#111b29;border:1px solid #27394e;border-radius:16px;
+ box-shadow:0 7px 18px rgba(0,0,0,.14);
+}
+.pdf{background:#1a3048;color:#68b7ff;border:1px solid #294966}
+.iconbtn,.action{background:#142235;border-color:#2b4058;color:#e2edf8}
+.action.primary{background:linear-gradient(135deg,#2386d5,#1766aa);border-color:#318bd2;color:#fff}
+.main-tabs{
+ background:rgba(13,22,34,.94);border:1px solid #2b3d53;
+ box-shadow:0 14px 38px rgba(0,0,0,.42);
+ backdrop-filter:blur(24px);
+}
+.main-tab{color:#91a4ba}
+.main-tab.active{background:#1b344e;border:1px solid #3d79ae;color:#a9d7ff}
+.notice{background:#111b29;border-color:#28394d;color:#9aacc0}
+.empty{background:#111b29;border-color:#30445c;color:#9badc2}
+.footer{color:#71849b}
+[data-theme=light]{
+ --bg:#f2f5fa;--panel:#fff;--panel2:#e8f0f8;--text:#17283c;
+ --muted:#63778e;--line:#dce5ef;--accent:#247fce;
+}
+[data-theme=light] body{background:var(--bg)}
+[data-theme=light] .hero{background:linear-gradient(130deg,#153b5d,#216b9d);border-color:#d3e5f5}
+[data-theme=light] .cat{background:#fff;border-color:#dce5ef}
+[data-theme=light] .search,[data-theme=light] .doc,[data-theme=light] .notice,
+[data-theme=light] .empty{background:#fff;border-color:#dce5ef}
+[data-theme=light] .main-tabs{background:rgba(255,255,255,.94);border-color:#dce5ef}
+[data-theme=light] .main-tab.active{background:#e6f2ff;color:#176bb3;border-color:#b9d8f3}
+@media(max-width:390px){
+ .hero{padding:22px 18px}.hero h1{font-size:23px}
+ .cat{min-height:145px;padding:13px}
+ .wrap{padding-left:13px;padding-right:13px}
+}
+
 </style></head><body><main class="wrap"><header class="top"><div class="brand"><div class="logo">🚆</div><div><b>PKP PLK Instructions</b><small>Biblioteka dokumentów kolejowych</small></div></div><button class="iconbtn" id="theme" aria-label="Zmień motyw">☀</button></header><section class="hero"><h1>Instrukcje kolejowe</h1><p>Каталог офіційних інструкцій, завантажені PDF та приклади документів — усе в одному додатку.</p></section>
 <nav class="main-tabs" aria-label="Головні розділи">
 <button class="main-tab active" data-view="catalog">☷ Каталог</button>
