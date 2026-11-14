@@ -83,7 +83,7 @@ public class MainActivity extends Activity {
                     if (!actualAddress.toLowerCase().matches(".*\\\\.pdf([?#].*)?$")) {
                         String pageHtml = downloadText(actualAddress);
                         JSONArray candidates = extractDocuments(pageHtml, actualAddress);
-                        String wantedCode = title == null ? "" : title.split("\\s*[—–-]\\s*", 2)[0].trim();
+                        String wantedCode = title == null ? "" : title.split("\\s+", 2)[0].trim();
                         String selected = null;
                         for (int i = 0; i < candidates.length(); i++) {
                             JSONObject candidate = candidates.optJSONObject(i);
