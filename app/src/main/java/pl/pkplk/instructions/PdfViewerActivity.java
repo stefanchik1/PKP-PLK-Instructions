@@ -2,6 +2,9 @@ package pl.pkplk.instructions;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.content.res.Configuration;
+import android.os.Handler;
+import android.os.Looper;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
@@ -23,9 +26,15 @@ public class PdfViewerActivity extends Activity {
     private int totalPages = 0;
     private boolean documentReady = false;
     private boolean changingPageField = false;
+    private LinearLayout header, pageBar, tools;
+    private boolean landscape = false;
+    private boolean controlsVisible = true;
+    private final Handler uiHandler = new Handler(Looper.getMainLooper());
+    private final Runnable hideControls = () -> setReaderControlsVisible(false);
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        landscape = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
         getWindow().setStatusBarColor(Color.rgb(15, 27, 42));
         getWindow().setNavigationBarColor(Color.rgb(15, 27, 42));
 
@@ -33,7 +42,7 @@ public class PdfViewerActivity extends Activity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Color.rgb(237, 241, 246));
 
-        LinearLayout header = new LinearLayout(this);
+        header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
         header.setPadding(dp(12), dp(7), dp(16), dp(7));
         header.setBackgroundColor(Color.rgb(15, 27, 42));
@@ -62,7 +71,7 @@ public class PdfViewerActivity extends Activity {
         header.addView(titleBox, new LinearLayout.LayoutParams(0, -2, 1));
         root.addView(header);
 
-        LinearLayout pageBar = new LinearLayout(this);
+        pageBar = new LinearLayout(this);
         pageBar.setGravity(Gravity.CENTER_VERTICAL);
         pageBar.setPadding(dp(12), dp(8), dp(12), dp(8));
         pageBar.setBackgroundColor(Color.WHITE);
@@ -112,7 +121,7 @@ public class PdfViewerActivity extends Activity {
         pdfView.setBackgroundColor(Color.rgb(226, 232, 239));
         root.addView(pdfView, new LinearLayout.LayoutParams(-1, 0, 1));
 
-        LinearLayout tools = new LinearLayout(this);
+        tools = new LinearLayout(this);
         tools.setGravity(Gravity.CENTER);
         tools.setPadding(dp(10), dp(6), dp(10), dp(6));
         tools.setBackgroundColor(Color.WHITE);
@@ -134,6 +143,10 @@ public class PdfViewerActivity extends Activity {
         tools.addView(zoomIn, new LinearLayout.LayoutParams(dp(58), dp(44)));
         root.addView(tools);
         setContentView(root);
+        if (landscape) {
+            setReaderControlsVisible(false);
+            pdfView.setOnClickListener(v -> toggleReaderControls());
+        }
 
         String path = getIntent().getStringExtra("pdf_path");
         if (path == null || path.trim().isEmpty() || !new File(path).isFile()) {
@@ -152,7 +165,7 @@ public class PdfViewerActivity extends Activity {
             .swipeHorizontal(false)
             .enableDoubletap(true)
             .defaultPage(0)
-            .pageFitPolicy(FitPolicy.WIDTH)
+            .pageFitPolicy(landscape ? FitPolicy.HEIGHT : FitPolicy.WIDTH)
             .fitEachPage(true)
             .autoSpacing(true)
             .spacing(dp(8))
@@ -164,6 +177,10 @@ public class PdfViewerActivity extends Activity {
                 loading.setVisibility(View.GONE);
                 pageCountLabel.setText("/ " + pages);
                 updatePageControls(0);
+                if (landscape) {
+                    pdfView.post(() -> pdfView.resetZoom());
+                    setReaderControlsVisible(false);
+                }
             })
             .onPageChange((page, pages) -> updatePageControls(page))
             .onError(error -> {
@@ -175,6 +192,44 @@ public class PdfViewerActivity extends Activity {
             .onPageError((page, error) -> Toast.makeText(this,
                 "Не вдалося відобразити сторінку " + (page + 1), Toast.LENGTH_SHORT).show())
             .load();
+    }
+
+    private void toggleReaderControls() {
+        if (!landscape) return;
+        setReaderControlsVisible(!controlsVisible);
+        if (controlsVisible) {
+            uiHandler.removeCallbacks(hideControls);
+            uiHandler.postDelayed(hideControls, 3500);
+        }
+    }
+
+    private void setReaderControlsVisible(boolean visible) {
+        controlsVisible = visible;
+        if (header == null || pageBar == null || tools == null) return;
+        int state = visible ? View.VISIBLE : View.GONE;
+        header.setVisibility(state);
+        pageBar.setVisibility(state);
+        tools.setVisibility(state);
+        loading.setVisibility(documentReady ? View.GONE : View.VISIBLE);
+        if (landscape) {
+            if (visible) {
+                getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            } else {
+                getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
+                    View.SYSTEM_UI_FLAG_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                );
+            }
+        }
+    }
+
+    @Override public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus && landscape && !controlsVisible) setReaderControlsVisible(false);
     }
 
     private void updatePageControls(int page) {
@@ -237,6 +292,7 @@ public class PdfViewerActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
+        uiHandler.removeCallbacks(hideControls);
         if (pdfView != null) pdfView.recycle();
         super.onDestroy();
     }
