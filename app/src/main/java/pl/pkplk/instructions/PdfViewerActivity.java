@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.graphics.pdf.PdfRenderer;
 import android.os.ParcelFileDescriptor;
 import android.view.Gravity;
+import android.view.ScaleGestureDetector;
 import android.widget.*;
 import java.io.File;
 import java.util.concurrent.ExecutorService;
