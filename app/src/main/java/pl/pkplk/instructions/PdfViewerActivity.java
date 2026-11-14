@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 public class PdfViewerActivity extends Activity {
     private PdfRenderer renderer;
     private ParcelFileDescriptor descriptor;
-    private ImageView pageImage;
+    private ZoomableImageView pageImage;
     private TextView pageLabel;
     private ProgressBar progress;
     private int pageIndex = 0;
@@ -51,9 +51,9 @@ public class PdfViewerActivity extends Activity {
         progress.setIndeterminate(true);
         root.addView(progress, new LinearLayout.LayoutParams(-1, 4));
         ScrollView scroll = new ScrollView(this);
-        pageImage = new ImageView(this);
+        pageImage = new ZoomableImageView(this);
         pageImage.setAdjustViewBounds(true);
-        pageImage.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        pageImage.setScaleType(ImageView.ScaleType.MATRIX);
         scroll.addView(pageImage, new ScrollView.LayoutParams(-1, -2));
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
         setContentView(root);
@@ -96,6 +96,7 @@ public class PdfViewerActivity extends Activity {
                     Bitmap old = pageImage.getDrawable() instanceof android.graphics.drawable.BitmapDrawable
                         ? ((android.graphics.drawable.BitmapDrawable) pageImage.getDrawable()).getBitmap() : null;
                     pageImage.setImageBitmap(ready);
+                    pageImage.fitToWidth();
                     if (old != null && old != ready && !old.isRecycled()) old.recycle();
                     pageLabel.setText((index + 1) + " / " + count);
                     progress.setVisibility(android.view.View.GONE);
@@ -111,6 +112,91 @@ public class PdfViewerActivity extends Activity {
                 });
             }
         });
+    }
+
+    private static class ZoomableImageView extends ImageView {
+        private final android.graphics.Matrix imageMatrix = new android.graphics.Matrix();
+        private final ScaleGestureDetector scaleDetector;
+        private float lastX, lastY;
+        private float baseScale = 1f;
+        private float currentScale = 1f;
+        private boolean scaling = false;
+
+        ZoomableImageView(Activity activity) {
+            super(activity);
+            scaleDetector = new ScaleGestureDetector(activity, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                @Override public boolean onScaleBegin(ScaleGestureDetector detector) {
+                    scaling = true;
+                    return true;
+                }
+                @Override public boolean onScale(ScaleGestureDetector detector) {
+                    float factor = detector.getScaleFactor();
+                    float next = Math.max(baseScale, Math.min(baseScale * 5f, currentScale * factor));
+                    float applied = next / currentScale;
+                    imageMatrix.postScale(applied, applied, detector.getFocusX(), detector.getFocusY());
+                    currentScale = next;
+                    setImageMatrix(imageMatrix);
+                    return true;
+                }
+                @Override public void onScaleEnd(ScaleGestureDetector detector) {
+                    scaling = false;
+                }
+            });
+        }
+
+        void fitToWidth() {
+            post(() -> {
+                android.graphics.drawable.Drawable drawable = getDrawable();
+                if (drawable == null || getWidth() <= 0) return;
+                float imageWidth = drawable.getIntrinsicWidth();
+                if (imageWidth <= 0) return;
+                baseScale = getWidth() / imageWidth;
+                currentScale = baseScale;
+                imageMatrix.reset();
+                imageMatrix.setScale(baseScale, baseScale);
+                float drawnWidth = imageWidth * baseScale;
+                imageMatrix.postTranslate(Math.max(0, (getWidth() - drawnWidth) / 2f), 0);
+                setImageMatrix(imageMatrix);
+            });
+        }
+
+        @Override public boolean onTouchEvent(android.view.MotionEvent event) {
+            scaleDetector.onTouchEvent(event);
+            int action = event.getActionMasked();
+            if (action == android.view.MotionEvent.ACTION_DOWN) {
+                lastX = event.getX();
+                lastY = event.getY();
+                getParent().requestDisallowInterceptTouchEvent(currentScale > baseScale * 1.01f);
+                return true;
+            }
+            if (action == android.view.MotionEvent.ACTION_POINTER_DOWN) {
+                getParent().requestDisallowInterceptTouchEvent(true);
+                return true;
+            }
+            if (action == android.view.MotionEvent.ACTION_MOVE) {
+                if (!scaleDetector.isInProgress() && event.getPointerCount() == 1
+                        && currentScale > baseScale * 1.01f) {
+                    float x = event.getX();
+                    float y = event.getY();
+                    imageMatrix.postTranslate(x - lastX, y - lastY);
+                    setImageMatrix(imageMatrix);
+                    lastX = x;
+                    lastY = y;
+                } else if (event.getPointerCount() == 1) {
+                    lastX = event.getX();
+                    lastY = event.getY();
+                }
+                getParent().requestDisallowInterceptTouchEvent(currentScale > baseScale * 1.01f);
+                return true;
+            }
+            if (action == android.view.MotionEvent.ACTION_POINTER_UP || action == android.view.MotionEvent.ACTION_UP
+                    || action == android.view.MotionEvent.ACTION_CANCEL) {
+                scaling = false;
+                getParent().requestDisallowInterceptTouchEvent(false);
+                return true;
+            }
+            return true;
+        }
     }
 
     @Override protected void onDestroy() {
