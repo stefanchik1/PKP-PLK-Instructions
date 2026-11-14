@@ -41,6 +41,13 @@ public class PdfViewerActivity extends Activity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Color.rgb(237, 241, 246));
+        // Keep portrait controls and PDF content clear of Android status/navigation bars.
+        root.setOnApplyWindowInsetsListener((view, insets) -> {
+            int topInset = insets.getSystemWindowInsetTop();
+            int bottomInset = insets.getSystemWindowInsetBottom();
+            view.setPadding(0, topInset, 0, bottomInset);
+            return insets;
+        });
 
         header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
