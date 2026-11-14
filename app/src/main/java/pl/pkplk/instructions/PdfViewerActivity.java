@@ -59,7 +59,8 @@ public class PdfViewerActivity extends Activity {
         back.setTextSize(32);
         back.setTextColor(text);
         back.setGravity(Gravity.CENTER);
-        back.setBackground(round(surfaceAlt, dp(14), line));\n        header.addView(back, new LinearLayout.LayoutParams(dp(42), dp(42)));
+        back.setBackground(round(surfaceAlt, dp(14), line));
+        header.addView(back, new LinearLayout.LayoutParams(dp(42), dp(42)));
         back.setOnClickListener(v -> finish());
 
         LinearLayout titleBox = new LinearLayout(this);
@@ -73,7 +74,8 @@ public class PdfViewerActivity extends Activity {
         TextView subtitle = new TextView(this);
         subtitle.setText("PDF  /  PKP PLK");
         subtitle.setTextColor(muted);
-        subtitle.setTextSize(10);\n        subtitle.setLetterSpacing(0.08f);
+        subtitle.setTextSize(10);
+        subtitle.setLetterSpacing(0.08f);
         titleBox.addView(title);
         titleBox.addView(subtitle);
         header.addView(titleBox, new LinearLayout.LayoutParams(0, -2, 1));
@@ -118,7 +120,8 @@ public class PdfViewerActivity extends Activity {
         pageCountLabel = new TextView(this);
         pageCountLabel.setText("СТОРІНКА  /  —");
         pageCountLabel.setTextColor(muted);
-        pageCountLabel.setTextSize(11);\n        pageCountLabel.setTypeface(null, android.graphics.Typeface.BOLD);
+        pageCountLabel.setTextSize(11);
+        pageCountLabel.setTypeface(null, android.graphics.Typeface.BOLD);
         pageBar.addView(pageCountLabel, new LinearLayout.LayoutParams(0, -2, 1));
 
         next = button("›", true);
