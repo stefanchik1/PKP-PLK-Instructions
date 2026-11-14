@@ -18,7 +18,7 @@ button:active{transform:scale(.97)}
 .action.primary{background:linear-gradient(135deg,#187bc2,#1762a0);box-shadow:0 5px 14px #1265a333}
 .search{min-height:52px;border-radius:16px;box-shadow:0 4px 14px #0000000a}
 .search input{font-size:14px}
-.main-tabs{position:sticky;top:0;z-index:5;padding:7px;margin:14px -3px 20px;border:1px solid var(--line);border-radius:17px;background:var(--bg);box-shadow:0 8px 22px #00000014;backdrop-filter:blur(16px)}
+.main-tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom));z-index:50;width:min(784px,calc(100% - 24px));padding:7px;margin:0;border:1px solid var(--line);border-radius:20px;background:color-mix(in srgb,var(--panel) 92%,transparent);box-shadow:0 12px 34px #0005;backdrop-filter:blur(22px)}.wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom))}.main-tab{min-height:50px;display:flex;align-items:center;justify-content:center;gap:5px}.main-tab.active{background:var(--accent);color:white;border-color:var(--accent)}
 .main-tab{min-height:46px;border:1px solid transparent;border-radius:12px;font-size:13px;font-weight:700;transition:background .18s,color .18s}
 .main-tab.active{background:var(--panel2);border-color:var(--accent);box-shadow:inset 0 0 0 1px #3998ed20}
 .tabs{padding-bottom:3px}
@@ -77,13 +77,14 @@ const docs=[['Ir-1','Instrukcja o prowadzeniu ruchu pociągów','Obowiązuje od 
 let tab='all',saved=JSON.parse(localStorage.getItem('savedDocs')||'[]'),savedCats=JSON.parse(localStorage.getItem('savedCats')||'[]'),selectedCategory=-1,catalogSnapshot=null,catalogLoading=false;const $=id=>document.getElementById(id);function selectCategory(index){selectedCategory=index;tab='all';document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab==='all'));renderCategoryDocuments();const hasCategory=!!(catalogSnapshot&&(catalogSnapshot.data||[]).some(x=>x.index===index));if((!catalogSnapshot||!hasCategory)&&!catalogLoading&&window.PLKApp&&PLKApp.refreshCatalog){catalogLoading=true;$('syncstatus').textContent='Завантажую інструкції вибраної категорії…';$('syncresults').innerHTML='<div class="empty">Завантажую список PDF з офіційного каталогу PKP PLK…</div>';PLKApp.refreshCatalog();}setTimeout(()=>{$('docheading').scrollIntoView({behavior:'smooth',block:'start'});},80);}
 function renderCategoryDocuments(){if(!catalogSnapshot){$('syncresults').innerHTML='<div class="empty">Каталог ще не завантажено. Натисни «Sprawdź aktualizacje PLK».</div>';return;}let data=catalogSnapshot.data||[];let category=data.find(x=>x.index===selectedCategory);if(selectedCategory<0){$('docheading').textContent='Вибери категорію інструкцій';$('docsubheading').textContent='Документи будуть показані тут, без переходу на сайт';$('syncresults').innerHTML='<div class="empty">Вибери одну з 13 категорій вище.</div>';return;}let cat=cats[selectedCategory];$('docheading').textContent=cat?cat[0]+' — '+cat[1]:'Документи категорії';$('docsubheading').textContent=category?(category.documents||[]).length+' документів · вибери потрібний PDF':'Для цієї категорії немає отриманих даних';let docs=(category&&category.documents)||[];let esc=v=>String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));$('syncresults').innerHTML=docs.map(d=>'<article class="doc"><div class="pdf">PDF</div><div class="docmain"><b>'+esc(d.title)+'</b><small>Офіційний файл · PDF</small></div><button class="iconbtn dynamic-download" data-url="'+esc(d.url)+'" data-title="'+esc(d.title)+'">↓ Завантажити</button></article>').join('')||'<div class="empty">У цій категорії PDF не знайдено. Онови каталог пізніше.</div>';document.querySelectorAll('.dynamic-download').forEach(b=>b.onclick=()=>PLKApp.downloadPdf(b.dataset.url,b.dataset.title));}
 function escHtml(v){return String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function normalizeSearch(value){return String(value||'').toLocaleLowerCase('pl-PL').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]/g,'');}
 function render(){
- let q=$('q').value.toLowerCase().trim();
+ let qRaw=$('q').value.trim();let q=normalizeSearch(qRaw);
  $('clear').style.display=q?'block':'none';
- let cs=cats.filter(c=>tab!=='saved'||savedCats.includes(c[0])).filter(c=>c.join(' ').toLowerCase().includes(q));
+ let cs=cats.filter(c=>tab!=='saved'||savedCats.includes(c[0])).filter(c=>normalizeSearch(c.join(' ')).includes(q));
  $('categories').innerHTML=cs.map(c=>`<article class="cat"><div style="display:flex;justify-content:space-between;align-items:start"><strong>${c[0]}</strong><button class="iconbtn favcat" data-id="${c[0]}" aria-label="Ulubiona kategoria">${savedCats.includes(c[0])?'★':'☆'}</button></div><span>${c[1]}<br>${c[2]}</span><div style="margin-top:12px"><button class="action open-cat" data-url="${c[3]}">Показати інструкції</button></div></article>`).join('')||'<div class="empty">Категорій не знайдено.</div>';
- let ds=docs.filter(d=>(tab!=='saved'||saved.includes(d[0]))&&d.join(' ').toLowerCase().includes(q));
- if(tab==='recent')ds=docs.slice(0,6).filter(d=>d.join(' ').toLowerCase().includes(q));
+ let ds=docs.filter(d=>(tab!=='saved'||saved.includes(d[0]))&&normalizeSearch(d.join(' ')).includes(q));
+ if(tab==='recent')ds=docs.slice(0,6).filter(d=>normalizeSearch(d.join(' ')).includes(q));
  $('docs').innerHTML=ds.map(d=>`<article class="doc"><div class="pdf">${d[0]}</div><div class="docmain"><b>${d[1]}</b><small>${d[2]}</small></div><button class="iconbtn fav" data-id="${d[0]}" aria-label="Ulubione">${saved.includes(d[0])?'★':'☆'}</button><button class="iconbtn open-doc" data-url="${d[3]}" data-title="${d[0]} — ${d[1]}" aria-label="Pobierz PDF">↓</button></article>`).join('')||'<div class="empty">Немає результатів у прикладах.</div>';
  $('heading').textContent=tab==='saved'?'Обране':'Категорії інструкцій';
  $('count').textContent=tab==='saved'?saved.length+' документів · '+savedCats.length+' категорій':cs.length+' категорій';
@@ -108,7 +109,7 @@ function render(){
      (catalogSnapshot.data||[]).forEach(category=>{
        const cat=cats[category.index]||[];
        (category.documents||[]).forEach(d=>{
-         const hay=(d.title+' '+(cat[0]||'')+' '+(cat[1]||'')+' '+(cat[2]||'')).toLowerCase();
+         const hay=normalizeSearch(d.title+' '+(cat[0]||'')+' '+(cat[1]||'')+' '+(cat[2]||''));
          if(hay.includes(q)) matches.push({title:d.title,url:d.url,category:cat[1]||'Каталог PKP PLK',code:cat[0]||''});
        });
      });
