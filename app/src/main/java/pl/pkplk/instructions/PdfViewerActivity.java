@@ -155,6 +155,7 @@ public class PdfViewerActivity extends Activity {
             if (documentReady) {
                 int currentPage = pdfView.getCurrentPage();
                 pdfView.fitToWidth(currentPage);
+                setReaderControlsVisible(false);
             }
         });
         Button zoomIn = button("+", false);
@@ -170,10 +171,8 @@ public class PdfViewerActivity extends Activity {
         root.addView(tools, toolsParams);
 
         setContentView(root);
-        if (landscape) {
-            setReaderControlsVisible(false);
-            pdfView.setOnClickListener(v -> toggleReaderControls());
-        }
+        pdfView.setOnClickListener(v -> toggleReaderControls());
+        if (landscape) setReaderControlsVisible(false);
 
         String path = getIntent().getStringExtra("pdf_path");
         if (path == null || path.trim().isEmpty() || !new File(path).isFile()) {
@@ -241,7 +240,6 @@ public class PdfViewerActivity extends Activity {
     }
 
     private void toggleReaderControls() {
-        if (!landscape) return;
         setReaderControlsVisible(!controlsVisible);
         if (controlsVisible) {
             uiHandler.removeCallbacks(hideControls);
@@ -257,22 +255,24 @@ public class PdfViewerActivity extends Activity {
         pageBar.setVisibility(state);
         tools.setVisibility(state);
         loading.setVisibility(documentReady ? View.GONE : View.VISIBLE);
-        if (landscape) {
-            if (visible) {
-                getWindow().getDecorView().setSystemUiVisibility(dark ? View.SYSTEM_UI_FLAG_LAYOUT_STABLE : View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
-            } else {
-                getWindow().getDecorView().setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_FULLSCREEN |
-                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
-                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                );
-            }
+        if (visible) {
+            getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                (dark ? 0 : View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
+            );
+            uiHandler.removeCallbacks(hideControls);
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_FULLSCREEN |
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            );
         }
     }
 
     @Override public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (hasFocus && landscape && !controlsVisible) setReaderControlsVisible(false);
+        if (hasFocus && !controlsVisible) setReaderControlsVisible(false);
     }
 
     private void updatePageControls(int page) {
