@@ -14,147 +14,272 @@ import android.view.KeyEvent;
 import android.view.inputmethod.EditorInfo;
 import android.widget.*;
 import android.view.View;
+import android.view.ViewGroup;
+import android.graphics.drawable.GradientDrawable;
 import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class PdfViewerActivity extends Activity {
     private PdfRenderer renderer;
     private ParcelFileDescriptor descriptor;
-    private ZoomableImageView pageImage;
-    private TextView pageTotal;
+    private ScrollView scroll;
+    private LinearLayout pagesColumn;
+    private TextView pageTotal, titleView;
     private EditText pageNumber;
     private Button prevButton, nextButton;
     private ProgressBar progress;
-    private int pageIndex = 0;
-    private int pageCount = 0;
-    private int requestId = 0;
+    private int pageIndex = 0, pageCount = 0;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final ExecutorService renderQueue = Executors.newSingleThreadExecutor();
+    private final Set<Integer> rendering = new HashSet<>();
+    private final ImageView[] pageViews = new ImageView[0];
+    private ImageView[] images;
+    private TextView[] pageLabels;
+    private Bitmap[] bitmaps;
+    private boolean closed = false;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        getWindow().setStatusBarColor(Color.rgb(15, 25, 38));
+        getWindow().setNavigationBarColor(Color.rgb(15, 25, 38));
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.rgb(28, 38, 50));
+        root.setBackgroundColor(Color.rgb(238, 242, 247));
 
-        LinearLayout bar = new LinearLayout(this);
-        bar.setGravity(Gravity.CENTER_VERTICAL);
-        bar.setPadding(8, 5, 8, 5);
+        LinearLayout toolbar = new LinearLayout(this);
+        toolbar.setGravity(Gravity.CENTER_VERTICAL);
+        toolbar.setPadding(dp(12), dp(8), dp(12), dp(8));
+        toolbar.setBackgroundColor(Color.rgb(15, 25, 38));
+        TextView back = new TextView(this);
+        back.setText("‹");
+        back.setTextColor(Color.WHITE);
+        back.setTextSize(34);
+        back.setGravity(Gravity.CENTER);
+        toolbar.addView(back, new LinearLayout.LayoutParams(dp(42), dp(48)));
+        back.setOnClickListener(v -> finish());
+        LinearLayout heading = new LinearLayout(this);
+        heading.setOrientation(LinearLayout.VERTICAL);
+        heading.setPadding(dp(8), 0, 0, 0);
+        titleView = new TextView(this);
+        titleView.setText("Перегляд PDF");
+        titleView.setTextColor(Color.WHITE);
+        titleView.setTextSize(16);
+        titleView.setMaxLines(1);
+        TextView subtitle = new TextView(this);
+        subtitle.setText("Документ · режим читання");
+        subtitle.setTextColor(Color.rgb(174, 190, 208));
+        subtitle.setTextSize(11);
+        heading.addView(titleView);
+        heading.addView(subtitle);
+        toolbar.addView(heading, new LinearLayout.LayoutParams(0, -2, 1));
+        root.addView(toolbar);
 
-        prevButton = new Button(this);
-        prevButton.setText("‹");
-        prevButton.setTextSize(24);
-        prevButton.setContentDescription("Попередня сторінка");
-        prevButton.setOnClickListener(v -> showPage(pageIndex - 1));
-
+        LinearLayout navigation = new LinearLayout(this);
+        navigation.setGravity(Gravity.CENTER_VERTICAL);
+        navigation.setPadding(dp(12), dp(7), dp(12), dp(7));
+        navigation.setBackgroundColor(Color.WHITE);
+        prevButton = navButton("‹");
+        prevButton.setOnClickListener(v -> goToPage(pageIndex - 1));
+        navigation.addView(prevButton, new LinearLayout.LayoutParams(dp(44), dp(42)));
         pageNumber = new EditText(this);
         pageNumber.setSingleLine(true);
         pageNumber.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         pageNumber.setImeOptions(EditorInfo.IME_ACTION_GO);
-        pageNumber.setTextColor(Color.WHITE);
-        pageNumber.setHintTextColor(Color.LTGRAY);
-        pageNumber.setHint("№");
+        pageNumber.setTextColor(Color.rgb(24, 43, 62));
+        pageNumber.setTextSize(15);
         pageNumber.setGravity(Gravity.CENTER);
-        pageNumber.setTextSize(16);
         pageNumber.setSelectAllOnFocus(true);
+        pageNumber.setBackground(round(Color.rgb(240, 244, 248), dp(9)));
         pageNumber.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE
-                    || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
-                goToEnteredPage();
+            if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE ||
+                (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                try { goToPage(Integer.parseInt(pageNumber.getText().toString()) - 1); }
+                catch (Exception ignored) { updateNavigation(); }
+                ((android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE))
+                    .hideSoftInputFromWindow(pageNumber.getWindowToken(), 0);
+                pageNumber.clearFocus();
                 return true;
             }
             return false;
         });
-
+        navigation.addView(pageNumber, new LinearLayout.LayoutParams(dp(54), dp(42)));
         pageTotal = new TextView(this);
-        pageTotal.setTextColor(Color.WHITE);
-        pageTotal.setGravity(Gravity.CENTER_VERTICAL);
-        pageTotal.setTextSize(15);
-        pageTotal.setPadding(4, 0, 8, 0);
+        pageTotal.setTextColor(Color.rgb(80, 98, 118));
+        pageTotal.setTextSize(14);
+        pageTotal.setPadding(dp(8), 0, 0, 0);
+        navigation.addView(pageTotal, new LinearLayout.LayoutParams(0, -2, 1));
+        nextButton = navButton("›");
+        nextButton.setOnClickListener(v -> goToPage(pageIndex + 1));
+        navigation.addView(nextButton, new LinearLayout.LayoutParams(dp(44), dp(42)));
+        root.addView(navigation);
 
-        nextButton = new Button(this);
-        nextButton.setText("›");
-        nextButton.setTextSize(24);
-        nextButton.setContentDescription("Наступна сторінка");
-        nextButton.setOnClickListener(v -> showPage(pageIndex + 1));
-
-        bar.addView(prevButton, new LinearLayout.LayoutParams(52, 48));
-        bar.addView(pageNumber, new LinearLayout.LayoutParams(54, 48));
-        bar.addView(pageTotal, new LinearLayout.LayoutParams(0, 48, 1));
-        bar.addView(nextButton, new LinearLayout.LayoutParams(52, 48));
-        root.addView(bar);
-
-        progress = new ProgressBar(this);
+        progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         progress.setIndeterminate(true);
-        root.addView(progress, new LinearLayout.LayoutParams(-1, 4));
+        progress.setVisibility(View.GONE);
+        root.addView(progress, new LinearLayout.LayoutParams(-1, dp(3)));
 
-        ScrollView scroll = new ScrollView(this);
+        scroll = new ScrollView(this);
         scroll.setFillViewport(true);
         scroll.setClipToPadding(false);
-        pageImage = new ZoomableImageView(this);
-        pageImage.setAdjustViewBounds(true);
-        pageImage.setScaleType(ImageView.ScaleType.MATRIX);
-        pageImage.setBackgroundColor(Color.WHITE);
-        pageImage.setPageSwipeListener(direction -> showPage(pageIndex + direction));
-        scroll.addView(pageImage, new ScrollView.LayoutParams(-1, -2));
+        scroll.setPadding(dp(8), dp(12), dp(8), dp(18));
+        pagesColumn = new LinearLayout(this);
+        pagesColumn.setOrientation(LinearLayout.VERTICAL);
+        scroll.addView(pagesColumn, new ScrollView.LayoutParams(-1, -2));
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
+        scroll.setOnScrollChangeListener((View v, int x, int y, int oldX, int oldY) -> {
+            updateVisiblePage();
+            renderNearbyPages();
+        });
 
-        LinearLayout zoomBar = new LinearLayout(this);
-        zoomBar.setGravity(Gravity.CENTER);
-        zoomBar.setPadding(6, 3, 6, 3);
-        Button zoomOut = new Button(this);
-        zoomOut.setText("−");
-        zoomOut.setTextSize(20);
-        zoomOut.setContentDescription("Зменшити масштаб");
-        zoomOut.setOnClickListener(v -> pageImage.zoomBy(0.8f));
-        Button fit = new Button(this);
-        fit.setText("Dopasuj");
-        fit.setTextSize(13);
-        fit.setOnClickListener(v -> pageImage.fitToWidth());
-        Button zoomIn = new Button(this);
-        zoomIn.setText("+");
-        zoomIn.setTextSize(20);
-        zoomIn.setContentDescription("Збільшити масштаб");
-        zoomIn.setOnClickListener(v -> pageImage.zoomBy(1.25f));
-        zoomBar.addView(zoomOut, new LinearLayout.LayoutParams(64, 46));
-        zoomBar.addView(fit, new LinearLayout.LayoutParams(112, 46));
-        zoomBar.addView(zoomIn, new LinearLayout.LayoutParams(64, 46));
-        root.addView(zoomBar);
-
+        LinearLayout tools = new LinearLayout(this);
+        tools.setGravity(Gravity.CENTER);
+        tools.setPadding(dp(10), dp(5), dp(10), dp(5));
+        tools.setBackgroundColor(Color.WHITE);
+        Button minus = toolButton("−");
+        minus.setOnClickListener(v -> zoomVisible(0.85f));
+        Button fit = toolButton("За шириною");
+        fit.setOnClickListener(v -> fitVisible());
+        Button plus = toolButton("+");
+        plus.setOnClickListener(v -> zoomVisible(1.2f));
+        tools.addView(minus, new LinearLayout.LayoutParams(dp(58), dp(44)));
+        LinearLayout.LayoutParams fitParams = new LinearLayout.LayoutParams(dp(150), dp(44));
+        fitParams.setMargins(dp(10), 0, dp(10), 0);
+        tools.addView(fit, fitParams);
+        tools.addView(plus, new LinearLayout.LayoutParams(dp(58), dp(44)));
+        root.addView(tools);
         setContentView(root);
+
         try {
             String path = getIntent().getStringExtra("pdf_path");
             if (path == null || path.trim().isEmpty()) throw new IllegalArgumentException("Missing PDF path");
             File f = new File(path);
+            titleView.setText(f.getName().replaceAll("(?i)\\.pdf$", ""));
             descriptor = ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_ONLY);
             renderer = new PdfRenderer(descriptor);
             pageCount = renderer.getPageCount();
-            pageTotal.setText("/ " + pageCount);
+            images = new ImageView[pageCount];
+            pageLabels = new TextView[pageCount];
+            bitmaps = new Bitmap[pageCount];
+            pageTotal.setText("/ " + pageCount + " сторінок");
+            for (int i = 0; i < pageCount; i++) addPagePlaceholder(i);
             updateNavigation();
-            showPage(0);
+            scroll.post(this::renderNearbyPages);
         } catch (Exception e) {
-            progress.setVisibility(View.GONE);
-            pageTotal.setText("Не вдалося відкрити PDF");
-            Toast.makeText(this, "Помилка відкриття документа PDF", Toast.LENGTH_LONG).show();
+            pageTotal.setText("Помилка відкриття документа");
+            Toast.makeText(this, "Не вдалося відкрити PDF", Toast.LENGTH_LONG).show();
         }
     }
 
-    private void goToEnteredPage() {
-        String value = pageNumber.getText().toString().trim();
-        if (value.isEmpty()) {
-            pageNumber.setText(String.valueOf(pageIndex + 1));
-            return;
+    private void addPagePlaceholder(int index) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setBackground(round(Color.WHITE, dp(5)));
+        card.setElevation(dp(2));
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
+        cardParams.setMargins(dp(2), 0, dp(2), dp(14));
+        pagesColumn.addView(card, cardParams);
+        TextView label = new TextView(this);
+        label.setText("СТОРІНКА " + (index + 1));
+        label.setTextColor(Color.rgb(115, 130, 146));
+        label.setTextSize(10);
+        label.setLetterSpacing(0.08f);
+        label.setPadding(dp(12), dp(8), dp(12), dp(5));
+        card.addView(label);
+        pageLabels[index] = label;
+        TouchZoomImageView image = new TouchZoomImageView(this);
+        image.setBackgroundColor(Color.WHITE);
+        image.setScaleType(ImageView.ScaleType.MATRIX);
+        image.setAdjustViewBounds(true);
+        image.setContentDescription("Сторінка " + (index + 1) + " PDF");
+        int approximateHeight = (int)(getResources().getDisplayMetrics().widthPixels * 1.35f);
+        card.addView(image, new LinearLayout.LayoutParams(-1, approximateHeight));
+        images[index] = image;
+    }
+
+    private void renderNearbyPages() {
+        if (renderer == null || closed || images == null) return;
+        int first = 0, last = pageCount - 1;
+        for (int i = 0; i < pageCount; i++) {
+            View page = (View) images[i].getParent();
+            int top = page.getTop() - scroll.getScrollY();
+            int bottom = top + page.getHeight();
+            if (bottom >= -scroll.getHeight() && top <= scroll.getHeight() * 2) {
+                first = Math.max(0, i - 1);
+                last = Math.min(pageCount - 1, i + 2);
+                break;
+            }
         }
-        try {
-            int requested = Integer.parseInt(value);
-            showPage(requested - 1);
-        } catch (NumberFormatException ignored) {
-            pageNumber.setText(String.valueOf(pageIndex + 1));
+        for (int i = first; i <= last; i++) renderPage(i);
+        int keepFrom = Math.max(0, first - 2), keepTo = Math.min(pageCount - 1, last + 2);
+        for (int i = 0; i < pageCount; i++) {
+            if ((i < keepFrom || i > keepTo) && bitmaps[i] != null) {
+                Bitmap old = bitmaps[i]; bitmaps[i] = null;
+                images[i].setImageDrawable(null);
+                if (!old.isRecycled()) old.recycle();
+            }
         }
-        pageNumber.clearFocus();
-        ((android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE))
-                .hideSoftInputFromWindow(pageNumber.getWindowToken(), 0);
+    }
+
+    private void renderPage(int index) {
+        if (bitmaps[index] != null || rendering.contains(index)) return;
+        rendering.add(index);
+        if (progress.getVisibility() != View.VISIBLE) progress.setVisibility(View.VISIBLE);
+        renderQueue.execute(() -> {
+            Bitmap bitmap = null;
+            try (PdfRenderer.Page page = renderer.openPage(index)) {
+                int width = Math.min(1800, Math.max(1000, getResources().getDisplayMetrics().widthPixels * 2));
+                float ratio = page.getHeight() / (float) page.getWidth();
+                int height = Math.max(1, (int)(width * ratio));
+                if ((long)width * height > 5_000_000L) height = Math.max(1, 5_000_000 / width);
+                bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+                bitmap.eraseColor(Color.WHITE);
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                Bitmap ready = bitmap;
+                main.post(() -> {
+                    rendering.remove(index);
+                    if (closed || isFinishing()) { ready.recycle(); return; }
+                    bitmaps[index] = ready;
+                    images[index].setImageBitmap(ready);
+                    images[index].setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
+                    images[index].fitToWidth();
+                    pageLabels[index].setText("СТОРІНКА " + (index + 1));
+                    if (rendering.isEmpty()) progress.setVisibility(View.GONE);
+                });
+            } catch (Exception e) {
+                if (bitmap != null && !bitmap.isRecycled()) bitmap.recycle();
+                main.post(() -> {
+                    rendering.remove(index);
+                    if (rendering.isEmpty()) progress.setVisibility(View.GONE);
+                    if (!closed) pageLabels[index].setText("Не вдалося завантажити сторінку " + (index + 1));
+                });
+            }
+        });
+    }
+
+    private void updateVisiblePage() {
+        if (images == null) return;
+        int best = pageIndex;
+        int center = scroll.getScrollY() + scroll.getHeight() / 3;
+        for (int i = 0; i < pageCount; i++) {
+            View page = (View) images[i].getParent();
+            if (page.getTop() <= center && page.getBottom() >= center) { best = i; break; }
+        }
+        if (best != pageIndex) {
+            pageIndex = best;
+            updateNavigation();
+        }
+    }
+
+    private void goToPage(int index) {
+        if (index < 0 || index >= pageCount || images == null) return;
+        pageIndex = index;
+        updateNavigation();
+        View page = (View) images[index].getParent();
+        scroll.smoothScrollTo(0, page.getTop());
+        renderNearbyPages();
     }
 
     private void updateNavigation() {
@@ -163,173 +288,87 @@ public class PdfViewerActivity extends Activity {
         if (nextButton != null) nextButton.setEnabled(pageIndex < pageCount - 1);
     }
 
-    private void showPage(int index) {
-        if (renderer == null || index < 0 || index >= pageCount) {
-            if (pageNumber != null) pageNumber.setText(String.valueOf(pageIndex + 1));
-            return;
-        }
-        pageIndex = index;
-        updateNavigation();
-        final int thisRequest = ++requestId;
-        final int count = pageCount;
-        pageTotal.setText("/ " + count);
-        progress.setVisibility(View.VISIBLE);
-        renderQueue.execute(() -> {
-            Bitmap bitmap = null;
-            try (PdfRenderer.Page page = renderer.openPage(index)) {
-                int screenWidth = getResources().getDisplayMetrics().widthPixels;
-                int width = Math.max(900, Math.min(2200, screenWidth * 2));
-                float ratio = page.getHeight() / (float) page.getWidth();
-                int height = Math.max(1, Math.min(3000, (int) (width * ratio)));
-                if ((long) width * height > 8_000_000L) height = Math.max(1, 8_000_000 / width);
-                bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-                bitmap.eraseColor(Color.WHITE);
-                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
-                Bitmap ready = bitmap;
-                main.post(() -> {
-                    if (isFinishing() || thisRequest != requestId) {
-                        ready.recycle();
-                        return;
-                    }
-                    Bitmap old = pageImage.getDrawable() instanceof android.graphics.drawable.BitmapDrawable
-                        ? ((android.graphics.drawable.BitmapDrawable) pageImage.getDrawable()).getBitmap() : null;
-                    pageImage.setImageBitmap(ready);
-                    pageImage.fitToWidth();
-                    if (old != null && old != ready && !old.isRecycled()) old.recycle();
-                    pageNumber.setText(String.valueOf(index + 1));
-                    pageTotal.setText("/ " + count);
-                    progress.setVisibility(View.GONE);
-                });
-            } catch (Exception e) {
-                if (bitmap != null && !bitmap.isRecycled()) bitmap.recycle();
-                main.post(() -> {
-                    if (thisRequest == requestId) {
-                        pageTotal.setText("/ " + count + " • помилка");
-                        progress.setVisibility(View.GONE);
-                        Toast.makeText(this, "Не вдалося відобразити сторінку PDF", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-        });
+    private void zoomVisible(float factor) {
+        if (images != null && pageIndex >= 0 && pageIndex < images.length) images[pageIndex].zoomBy(factor);
+    }
+    private void fitVisible() {
+        if (images != null) for (int i = 0; i < images.length; i++) if (bitmaps[i] != null) images[i].fitToWidth();
     }
 
-    private static class ZoomableImageView extends ImageView {
-        interface PageSwipeListener { void onSwipe(int direction); }
-        private final android.graphics.Matrix imageMatrix = new android.graphics.Matrix();
-        private final ScaleGestureDetector scaleDetector;
-        private float lastX, lastY, downX, downY;
-        private float baseScale = 1f;
-        private float currentScale = 1f;
-        private boolean horizontalGesture = false;
-        private PageSwipeListener pageSwipeListener;
+    private Button navButton(String text) {
+        Button b = new Button(this);
+        b.setText(text); b.setTextSize(23); b.setTextColor(Color.rgb(27, 54, 78));
+        b.setBackground(round(Color.rgb(239, 244, 248), dp(11)));
+        b.setPadding(0, 0, 0, 0);
+        return b;
+    }
+    private Button toolButton(String text) {
+        Button b = new Button(this);
+        b.setText(text); b.setTextSize(14); b.setTextColor(Color.rgb(27, 54, 78));
+        b.setAllCaps(false); b.setBackground(round(Color.rgb(239, 244, 248), dp(12)));
+        return b;
+    }
+    private GradientDrawable round(int color, int radius) {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(color); d.setCornerRadius(radius); return d;
+    }
+    private int dp(float value) { return (int)(value * getResources().getDisplayMetrics().density + 0.5f); }
 
-        ZoomableImageView(Activity activity) {
+    private static class TouchZoomImageView extends ImageView {
+        private final android.graphics.Matrix matrix = new android.graphics.Matrix();
+        private final ScaleGestureDetector detector;
+        private float base = 1f, scale = 1f, lastX, lastY;
+        TouchZoomImageView(Activity activity) {
             super(activity);
-            setScaleType(ScaleType.MATRIX);
-            scaleDetector = new ScaleGestureDetector(activity, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
-                @Override public boolean onScale(ScaleGestureDetector detector) {
-                    float next = Math.max(baseScale, Math.min(baseScale * 5f, currentScale * detector.getScaleFactor()));
-                    float applied = next / currentScale;
-                    imageMatrix.postScale(applied, applied, detector.getFocusX(), detector.getFocusY());
-                    currentScale = next;
-                    setImageMatrix(imageMatrix);
-                    return true;
+            detector = new ScaleGestureDetector(activity, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                @Override public boolean onScale(ScaleGestureDetector d) {
+                    float next = Math.max(base, Math.min(base * 4f, scale * d.getScaleFactor()));
+                    matrix.postScale(next / scale, next / scale, d.getFocusX(), d.getFocusY());
+                    scale = next; setImageMatrix(matrix); return true;
                 }
             });
         }
-
-        void setPageSwipeListener(PageSwipeListener listener) { pageSwipeListener = listener; }
-
-        void zoomBy(float factor) {
-            if (getDrawable() == null) return;
-            float next = Math.max(baseScale, Math.min(baseScale * 5f, currentScale * factor));
-            float applied = next / currentScale;
-            imageMatrix.postScale(applied, applied, getWidth() / 2f, getHeight() / 2f);
-            currentScale = next;
-            setImageMatrix(imageMatrix);
-        }
-
         void fitToWidth() {
             post(() -> {
-                android.graphics.drawable.Drawable drawable = getDrawable();
-                if (drawable == null || getWidth() <= 0) return;
-                float imageWidth = drawable.getIntrinsicWidth();
-                if (imageWidth <= 0) return;
-                baseScale = getWidth() / imageWidth;
-                currentScale = baseScale;
-                imageMatrix.reset();
-                imageMatrix.setScale(baseScale, baseScale);
-                setImageMatrix(imageMatrix);
-                scrollTo(0, 0);
+                if (getDrawable() == null || getWidth() == 0) return;
+                base = getWidth() / (float)getDrawable().getIntrinsicWidth();
+                scale = base; matrix.reset(); matrix.setScale(base, base); setImageMatrix(matrix);
             });
         }
-
-        @Override public boolean onTouchEvent(android.view.MotionEvent event) {
-            scaleDetector.onTouchEvent(event);
-            int action = event.getActionMasked();
-            if (action == android.view.MotionEvent.ACTION_DOWN) {
-                downX = lastX = event.getX();
-                downY = lastY = event.getY();
-                horizontalGesture = false;
-                return true;
-            }
-            if (action == android.view.MotionEvent.ACTION_POINTER_DOWN) {
-                getParent().requestDisallowInterceptTouchEvent(true);
-                return true;
-            }
-            if (action == android.view.MotionEvent.ACTION_MOVE) {
-                if (scaleDetector.isInProgress()) {
+        void zoomBy(float factor) {
+            if (getDrawable() == null) return;
+            float next = Math.max(base, Math.min(base * 4f, scale * factor));
+            matrix.postScale(next / scale, next / scale, getWidth()/2f, getHeight()/2f);
+            scale = next; setImageMatrix(matrix);
+        }
+        @Override public boolean onTouchEvent(android.view.MotionEvent e) {
+            detector.onTouchEvent(e);
+            int a = e.getActionMasked();
+            if (a == android.view.MotionEvent.ACTION_DOWN) { lastX=e.getX(); lastY=e.getY(); return true; }
+            if (a == android.view.MotionEvent.ACTION_MOVE) {
+                if (detector.isInProgress() || scale > base * 1.01f) {
                     getParent().requestDisallowInterceptTouchEvent(true);
-                    return true;
-                }
-                if (currentScale > baseScale * 1.01f && event.getPointerCount() == 1) {
-                    float x = event.getX(), y = event.getY();
-                    imageMatrix.postTranslate(x - lastX, y - lastY);
-                    setImageMatrix(imageMatrix);
-                    lastX = x;
-                    lastY = y;
-                    getParent().requestDisallowInterceptTouchEvent(true);
-                } else if (event.getPointerCount() == 1) {
-                    float dx = event.getX() - downX;
-                    float dy = event.getY() - downY;
-                    if (Math.abs(dx) > 18 && Math.abs(dx) > Math.abs(dy) * 1.2f) {
-                        horizontalGesture = true;
-                        getParent().requestDisallowInterceptTouchEvent(true);
+                    if (!detector.isInProgress() && e.getPointerCount()==1) {
+                        matrix.postTranslate(e.getX()-lastX,e.getY()-lastY); setImageMatrix(matrix);
                     }
-                }
-                return true;
+                } else getParent().requestDisallowInterceptTouchEvent(false);
+                lastX=e.getX(); lastY=e.getY(); return true;
             }
-            if (action == android.view.MotionEvent.ACTION_UP) {
-                if (horizontalGesture && currentScale <= baseScale * 1.01f) {
-                    float dx = event.getX() - downX;
-                    if (Math.abs(dx) > 65 && pageSwipeListener != null) {
-                        pageSwipeListener.onSwipe(dx < 0 ? 1 : -1);
-                    }
-                }
-                getParent().requestDisallowInterceptTouchEvent(false);
-                performClick();
-                return true;
+            if (a == android.view.MotionEvent.ACTION_UP || a == android.view.MotionEvent.ACTION_CANCEL) {
+                getParent().requestDisallowInterceptTouchEvent(false); performClick(); return true;
             }
-            if (action == android.view.MotionEvent.ACTION_CANCEL || action == android.view.MotionEvent.ACTION_POINTER_UP) {
-                getParent().requestDisallowInterceptTouchEvent(false);
-                return true;
-            }
+            if (a == android.view.MotionEvent.ACTION_POINTER_DOWN) getParent().requestDisallowInterceptTouchEvent(true);
             return true;
         }
-
-        @Override public boolean performClick() {
-            super.performClick();
-            return true;
-        }
+        @Override public boolean performClick() { super.performClick(); return true; }
     }
 
     @Override protected void onDestroy() {
-        requestId++;
+        closed = true;
         renderQueue.shutdownNow();
-        try {
-            if (renderer != null) renderer.close();
-            if (descriptor != null) descriptor.close();
-        } catch (Exception ignored) {}
+        if (bitmaps != null) for (Bitmap b : bitmaps) if (b != null && !b.isRecycled()) b.recycle();
+        try { if (renderer != null) renderer.close(); if (descriptor != null) descriptor.close(); }
+        catch (Exception ignored) {}
         super.onDestroy();
     }
 }
