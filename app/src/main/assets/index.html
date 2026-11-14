@@ -44,6 +44,69 @@ button:active{transform:scale(.97)}
 @media(max-width:390px){.wrap{padding-left:12px;padding-right:12px}.main-tabs{gap:5px}.main-tab{font-size:12px;padding:11px 4px}.hero{padding:21px 17px}.hero p{max-width:92%}.cat{padding:12px;min-height:136px}.doc{gap:8px;padding:11px}.doc .iconbtn{padding:8px}}
 @media(min-width:600px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.hero{padding:30px}.hero h1{font-size:29px}}
 
+
+/* Reader-inspired visual system: clean surfaces, strong hierarchy, adaptive themes */
+:root{
+ --bg:#0b111b;--panel:#141e2b;--panel2:#1c2a3b;--text:#eef3fa;--muted:#9aaabd;
+ --line:#29394d;--accent:#68aef5;--good:#55c99a;
+ --surface-shadow:0 8px 24px rgba(0,0,0,.16);
+}
+[data-theme=light]{
+ --bg:#f4f6fa;--panel:#ffffff;--panel2:#edf3fa;--text:#172638;--muted:#6b7b8e;
+ --line:#e1e7ef;--accent:#2479ca;--good:#16835b;
+ --surface-shadow:0 7px 22px rgba(26,48,77,.065);
+}
+body{background:var(--bg);color:var(--text);transition:background .2s ease,color .2s ease}
+.wrap{max-width:780px;padding-top:env(safe-area-inset-top);padding-left:20px;padding-right:20px}
+.top{padding:18px 2px 20px}
+.logo{background:linear-gradient(145deg,#398ed4,#174d7c);box-shadow:0 6px 18px #1672bd35}
+.brand b{font-size:16px;font-weight:750;letter-spacing:-.25px}
+.brand small{font-size:11px;letter-spacing:.1px}
+.iconbtn,.action,.tab,.main-tab{font-family:inherit;transition:background .18s,border-color .18s,color .18s,transform .15s}
+.iconbtn{background:var(--panel);border-color:var(--line);box-shadow:none}
+.hero{margin:2px 0 20px;padding:25px 22px;border-radius:23px;background:linear-gradient(125deg,#102b46 0%,#174b75 58%,#236b9b 100%);box-shadow:0 12px 28px #0a315322}
+.hero h1{font-size:24px;font-weight:760;letter-spacing:-.7px}
+.hero p{font-size:13px;line-height:1.65;color:#d7e8f6}
+.actions{gap:9px;margin:0 0 14px}
+.action{border-radius:12px;padding:10px 13px;background:var(--panel);border-color:var(--line);font-size:13px;font-weight:650}
+.action.primary{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 4px 12px #2479ca28}
+.search{margin:14px 0 12px;padding:0 15px;min-height:54px;border-radius:16px;background:var(--panel);border-color:var(--line);box-shadow:var(--surface-shadow)}
+.search>span{font-size:20px;color:var(--muted)}
+.search input{font-size:14px}
+.tabs{gap:7px;margin:12px 0 17px}
+.tab{border-radius:11px;padding:9px 13px;background:transparent;border-color:transparent;font-size:12px;font-weight:700}
+.tab.active{background:var(--panel2);border-color:var(--line);color:var(--accent)}
+.section{margin:22px 2px 11px}
+.section h2{font-size:16px;font-weight:750;letter-spacing:-.25px}
+.section small{font-size:11px;color:var(--muted)}
+.grid{gap:11px}
+.cat{min-height:132px;padding:15px;border-radius:18px;background:var(--panel);border-color:var(--line);box-shadow:var(--surface-shadow)}
+.cat strong{font-size:23px;font-weight:800;letter-spacing:-.6px}
+.cat span{font-size:11px;line-height:1.55}
+.cat .iconbtn{width:34px;height:34px;padding:6px;border-radius:11px}
+.cat .action{margin-top:10px;min-height:35px;padding:8px 11px;font-size:11px;background:var(--panel2);color:var(--accent);border-color:var(--line);box-shadow:none}
+.doc{padding:13px 14px;margin-bottom:9px;gap:12px;border-radius:16px;background:var(--panel);border-color:var(--line);box-shadow:var(--surface-shadow)}
+.pdf{width:42px;height:46px;border-radius:12px;background:color-mix(in srgb,var(--accent) 12%,var(--panel2));color:var(--accent);font-size:10px;letter-spacing:.2px}
+.docmain b{font-size:13px;font-weight:700;letter-spacing:-.1px}
+.docmain small{font-size:11px;line-height:1.45}
+.doc .iconbtn{min-width:38px;min-height:38px;border-radius:11px;padding:8px}
+.main-tabs{bottom:calc(9px + env(safe-area-inset-bottom));padding:6px;border-radius:18px;background:color-mix(in srgb,var(--panel) 94%,transparent);border-color:var(--line);box-shadow:0 10px 30px #0002}
+.main-tab{min-height:46px;border-radius:13px;font-size:12px;font-weight:750;color:var(--muted)}
+.main-tab.active{background:var(--panel2);border-color:color-mix(in srgb,var(--accent) 40%,var(--line));color:var(--accent);box-shadow:none}
+.notice{margin-top:20px;background:var(--panel);border-color:var(--line);border-radius:16px;box-shadow:none}
+.empty{background:var(--panel);border:1px dashed var(--line);border-radius:16px;color:var(--muted)}
+.footer{font-size:10px}
+[data-theme=light] .hero{box-shadow:0 12px 28px rgba(20,70,110,.13)}
+[data-theme=light] .main-tabs{box-shadow:0 8px 26px rgba(26,48,77,.12)}
+@media(max-width:390px){
+ .wrap{padding-left:14px;padding-right:14px}
+ .hero{padding:22px 18px}
+ .hero h1{font-size:22px}
+ .cat{padding:12px;min-height:138px}
+ .main-tab{font-size:11px}
+}
+@media(min-width:600px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
 </style></head><body><main class="wrap"><header class="top"><div class="brand"><div class="logo">🚆</div><div><b>PKP PLK Instructions</b><small>Biblioteka dokumentów kolejowych</small></div></div><button class="iconbtn" id="theme" aria-label="Zmień motyw">☀</button></header><section class="hero"><h1>Instrukcje kolejowe</h1><p>Каталог офіційних інструкцій, завантажені PDF та приклади документів — усе в одному додатку.</p></section>
 <nav class="main-tabs" aria-label="Головні розділи">
 <button class="main-tab active" data-view="catalog">☷ Каталог</button>
@@ -127,5 +190,5 @@ function render(){
 }
 let mainView='catalog';function setMainView(view){mainView=view;document.querySelectorAll('.main-tab').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.querySelectorAll('.main-view').forEach(v=>v.style.display=v.id===(view==='catalog'?'catalogView':view==='downloaded'?'downloadedView':'examplesView')?'block':'none');$('searchWrap').style.display=view==='catalog'?'flex':'none';}
 document.querySelectorAll('.main-tab').forEach(b=>b.onclick=()=>setMainView(b.dataset.view));
-$('q').addEventListener('input',render);$('clear').onclick=()=>{$('q').value='';render()};document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});$('refresh').onclick=()=>{ $('syncstatus').textContent='Оновлюю каталог інструкцій…'; if(window.PLKApp&&PLKApp.refreshCatalog){catalogLoading=true;PLKApp.refreshCatalog()}else{$('syncstatus').textContent='Оновлення каталогу доступне у встановленому APK.'}};$('allfav').onclick=()=>{tab='saved';render();setMainView('catalog')};window.onCatalogRefresh=function(data,success){catalogLoading=false;let total=0;data.forEach(x=>total+=(x.documents||[]).length);catalogSnapshot={checkedAt:new Date().toISOString(),success:success,total:total,data:data};localStorage.setItem('plkCatalogSnapshot',JSON.stringify(catalogSnapshot));$('syncstatus').textContent='Оновлено '+success+'/13 категорій · знайдено '+total+' PDF · '+new Date().toLocaleString('pl-PL');render();if(success===0){$('syncresults').innerHTML='<div class="empty">Не вдалося отримати каталог PKP PLK. Перевір інтернет і натисни «Оновити каталог».</div>';}};window.onPdfProgress=function(title,p){$('syncstatus').textContent='Pobieranie: '+title+(p>=0?' · '+p+'%':'…')};window.onPdfDownloaded=function(item){$('syncstatus').textContent='Zapisano offline: '+item.title;PLKApp.listDownloadedDocuments()};window.onPdfError=function(title,error){$('syncstatus').textContent='Błąd pobierania: '+error;alert('Nie udało się pobrać PDF: '+error)};window.onOfflineList=function(items){$('offlinecount').textContent=items.length+' plikів';$('offline').innerHTML=items.map(x=>'<article class="doc"><div class="pdf">PDF</div><div class="docmain"><b>'+String(x.title).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))+'</b><small>'+((x.size/1048576).toFixed(1))+' MB · '+(x.custom?'Власний документ':'Завантажено з каталогу')+'</small></div><button class="iconbtn offline-open" data-file="'+x.file+'">Відкрити</button><button class="iconbtn offline-rename" data-file="'+x.file+'" data-title="'+String(x.title).replace(/"/g,'&quot;')+'">✎</button><button class="iconbtn offline-delete" data-file="'+x.file+'">×</button></article>').join('')||'<div class="empty">Бібліотека порожня. Додай свій PDF або завантаж документ із каталогу.</div>';document.querySelectorAll('.offline-open').forEach(b=>b.onclick=()=>PLKApp.openDownloadedDocument(b.dataset.file));document.querySelectorAll('.offline-rename').forEach(b=>b.onclick=()=>{let n=prompt('Нова назва документа:',b.dataset.title);if(n&&n.trim())PLKApp.renameDownloadedDocument(b.dataset.file,n.trim())});document.querySelectorAll('.offline-delete').forEach(b=>b.onclick=()=>{if(confirm('Видалити цей документ із пам’яті телефона?'))PLKApp.deleteDownloadedDocument(b.dataset.file)});};$('add-own').onclick=()=>{if(window.PLKApp&&PLKApp.addOwnInstruction)PLKApp.addOwnInstruction();else alert('Додавання PDF доступне у встановленому APK.');};if(window.PLKApp&&PLKApp.listDownloadedDocuments)PLKApp.listDownloadedDocuments();let cached=localStorage.getItem('plkCatalogSnapshot');if(cached){try{catalogSnapshot=JSON.parse(cached);$('syncstatus').textContent='Lokalna kopia katalogu: '+catalogSnapshot.total+' dokumentów · '+new Date(catalogSnapshot.checkedAt).toLocaleString('pl-PL');renderCategoryDocuments();}catch(e){}}let theme=localStorage.getItem('theme')||'dark';function setTheme(t){theme=t;document.documentElement.dataset.theme=t==='light'?'light':'dark';$('theme').textContent=t==='light'?'☾':'☀';localStorage.setItem('theme',t)}$('theme').onclick=()=>setTheme(theme==='dark'?'light':'dark');setTheme(theme);render();
+$('q').addEventListener('input',render);$('clear').onclick=()=>{$('q').value='';render()};document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});$('refresh').onclick=()=>{ $('syncstatus').textContent='Оновлюю каталог інструкцій…'; if(window.PLKApp&&PLKApp.refreshCatalog){catalogLoading=true;PLKApp.refreshCatalog()}else{$('syncstatus').textContent='Оновлення каталогу доступне у встановленому APK.'}};$('allfav').onclick=()=>{tab='saved';render();setMainView('catalog')};window.onCatalogRefresh=function(data,success){catalogLoading=false;let total=0;data.forEach(x=>total+=(x.documents||[]).length);catalogSnapshot={checkedAt:new Date().toISOString(),success:success,total:total,data:data};localStorage.setItem('plkCatalogSnapshot',JSON.stringify(catalogSnapshot));$('syncstatus').textContent='Оновлено '+success+'/13 категорій · знайдено '+total+' PDF · '+new Date().toLocaleString('pl-PL');render();if(success===0){$('syncresults').innerHTML='<div class="empty">Не вдалося отримати каталог PKP PLK. Перевір інтернет і натисни «Оновити каталог».</div>';}};window.onPdfProgress=function(title,p){$('syncstatus').textContent='Pobieranie: '+title+(p>=0?' · '+p+'%':'…')};window.onPdfDownloaded=function(item){$('syncstatus').textContent='Zapisano offline: '+item.title;PLKApp.listDownloadedDocuments()};window.onPdfError=function(title,error){$('syncstatus').textContent='Błąd pobierania: '+error;alert('Nie udało się pobrać PDF: '+error)};window.onOfflineList=function(items){$('offlinecount').textContent=items.length+' plikів';$('offline').innerHTML=items.map(x=>'<article class="doc"><div class="pdf">PDF</div><div class="docmain"><b>'+String(x.title).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))+'</b><small>'+((x.size/1048576).toFixed(1))+' MB · '+(x.custom?'Власний документ':'Завантажено з каталогу')+'</small></div><button class="iconbtn offline-open" data-file="'+x.file+'">Відкрити</button><button class="iconbtn offline-rename" data-file="'+x.file+'" data-title="'+String(x.title).replace(/"/g,'&quot;')+'">✎</button><button class="iconbtn offline-delete" data-file="'+x.file+'">×</button></article>').join('')||'<div class="empty">Бібліотека порожня. Додай свій PDF або завантаж документ із каталогу.</div>';document.querySelectorAll('.offline-open').forEach(b=>b.onclick=()=>PLKApp.openDownloadedDocument(b.dataset.file));document.querySelectorAll('.offline-rename').forEach(b=>b.onclick=()=>{let n=prompt('Нова назва документа:',b.dataset.title);if(n&&n.trim())PLKApp.renameDownloadedDocument(b.dataset.file,n.trim())});document.querySelectorAll('.offline-delete').forEach(b=>b.onclick=()=>{if(confirm('Видалити цей документ із пам’яті телефона?'))PLKApp.deleteDownloadedDocument(b.dataset.file)});};$('add-own').onclick=()=>{if(window.PLKApp&&PLKApp.addOwnInstruction)PLKApp.addOwnInstruction();else alert('Додавання PDF доступне у встановленому APK.');};if(window.PLKApp&&PLKApp.listDownloadedDocuments)PLKApp.listDownloadedDocuments();let cached=localStorage.getItem('plkCatalogSnapshot');if(cached){try{catalogSnapshot=JSON.parse(cached);$('syncstatus').textContent='Lokalna kopia katalogu: '+catalogSnapshot.total+' dokumentów · '+new Date(catalogSnapshot.checkedAt).toLocaleString('pl-PL');renderCategoryDocuments();}catch(e){}}let theme=localStorage.getItem('theme')||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');function setTheme(t){theme=t;document.documentElement.dataset.theme=t==='light'?'light':'dark';$('theme').textContent=t==='light'?'☾':'☀';localStorage.setItem('theme',t)}$('theme').onclick=()=>setTheme(theme==='dark'?'light':'dark');setTheme(theme);render();
 </script></body></html>
