@@ -42,16 +42,16 @@ public class PdfViewerActivity extends Activity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(bg);
-        root.setPadding(dp(10), dp(8), dp(10), dp(8));
+        root.setPadding(dp(12), dp(10), dp(12), dp(10));
         root.setOnApplyWindowInsetsListener((view, insets) -> {
-            view.setPadding(0, insets.getSystemWindowInsetTop(), 0, insets.getSystemWindowInsetBottom());
+            view.setPadding(dp(12), insets.getSystemWindowInsetTop() + dp(8), dp(12), insets.getSystemWindowInsetBottom() + dp(8));
             return insets;
         });
 
         header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setPadding(dp(12), dp(5), dp(14), dp(5));
-        header.setBackground(round(surface, dp(18), line));
+        header.setPadding(dp(10), dp(4), dp(14), dp(4));
+        header.setBackground(round(surface, dp(20), line));
         header.setElevation(dp(4));
 
         TextView back = new TextView(this);
@@ -59,7 +59,7 @@ public class PdfViewerActivity extends Activity {
         back.setTextSize(32);
         back.setTextColor(text);
         back.setGravity(Gravity.CENTER);
-        header.addView(back, new LinearLayout.LayoutParams(dp(42), dp(48)));
+        back.setBackground(round(surfaceAlt, dp(14), line));\n        header.addView(back, new LinearLayout.LayoutParams(dp(42), dp(42)));
         back.setOnClickListener(v -> finish());
 
         LinearLayout titleBox = new LinearLayout(this);
@@ -67,29 +67,29 @@ public class PdfViewerActivity extends Activity {
         titleBox.setPadding(dp(8), 0, 0, 0);
         TextView title = new TextView(this);
         title.setTextColor(text);
-        title.setTextSize(15);
+        title.setTextSize(14);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
         title.setMaxLines(1);
         TextView subtitle = new TextView(this);
-        subtitle.setText("ЧИТАЧ PDF  ·  PKP PLK");
+        subtitle.setText("PDF  /  PKP PLK");
         subtitle.setTextColor(muted);
-        subtitle.setTextSize(10);
+        subtitle.setTextSize(10);\n        subtitle.setLetterSpacing(0.08f);
         titleBox.addView(title);
         titleBox.addView(subtitle);
         header.addView(titleBox, new LinearLayout.LayoutParams(0, -2, 1));
         LinearLayout.LayoutParams headerParams = new LinearLayout.LayoutParams(-1, dp(58));
-        headerParams.bottomMargin = dp(10);
+        headerParams.bottomMargin = dp(12);
         root.addView(header, headerParams);
 
         pageBar = new LinearLayout(this);
         pageBar.setGravity(Gravity.CENTER_VERTICAL);
-        pageBar.setPadding(dp(12), dp(7), dp(12), dp(7));
-        pageBar.setBackground(round(surface, dp(18), line));
+        pageBar.setPadding(dp(10), dp(6), dp(10), dp(6));
+        pageBar.setBackground(round(surface, dp(24), line));
         pageBar.setElevation(dp(3));
 
         previous = button("‹", true);
         previous.setOnClickListener(v -> jumpToCurrent(-1));
-        pageBar.addView(previous, new LinearLayout.LayoutParams(dp(42), dp(40)));
+        pageBar.addView(previous, new LinearLayout.LayoutParams(dp(40), dp(40)));
 
         pageInput = new EditText(this);
         pageInput.setSingleLine(true);
@@ -100,7 +100,7 @@ public class PdfViewerActivity extends Activity {
         pageInput.setTypeface(null, android.graphics.Typeface.BOLD);
         pageInput.setGravity(Gravity.CENTER);
         pageInput.setSelectAllOnFocus(true);
-        pageInput.setBackground(round(surfaceAlt, dp(11), line));
+        pageInput.setBackground(round(surfaceAlt, dp(13), line));
         pageInput.setHintTextColor(muted);
         pageInput.setHint("1");
         pageInput.setOnEditorActionListener((v, actionId, event) -> {
@@ -111,21 +111,21 @@ public class PdfViewerActivity extends Activity {
             }
             return false;
         });
-        LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(dp(54), dp(40));
+        LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(dp(52), dp(40));
         inputParams.setMargins(dp(8), 0, dp(7), 0);
         pageBar.addView(pageInput, inputParams);
 
         pageCountLabel = new TextView(this);
         pageCountLabel.setText("СТОРІНКА  /  —");
         pageCountLabel.setTextColor(muted);
-        pageCountLabel.setTextSize(13);
+        pageCountLabel.setTextSize(11);\n        pageCountLabel.setTypeface(null, android.graphics.Typeface.BOLD);
         pageBar.addView(pageCountLabel, new LinearLayout.LayoutParams(0, -2, 1));
 
         next = button("›", true);
         next.setOnClickListener(v -> jumpToCurrent(1));
-        pageBar.addView(next, new LinearLayout.LayoutParams(dp(42), dp(40)));
+        pageBar.addView(next, new LinearLayout.LayoutParams(dp(40), dp(40)));
         LinearLayout.LayoutParams pageBarParams = new LinearLayout.LayoutParams(-1, dp(56));
-        pageBarParams.bottomMargin = dp(8);
+        pageBarParams.bottomMargin = dp(10);
         root.addView(pageBar, pageBarParams);
 
         loading = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
@@ -139,14 +139,14 @@ public class PdfViewerActivity extends Activity {
 
         tools = new LinearLayout(this);
         tools.setGravity(Gravity.CENTER);
-        tools.setPadding(dp(14), dp(8), dp(14), dp(8));
-        tools.setBackground(round(surface, dp(22), line));
+        tools.setPadding(dp(12), dp(8), dp(12), dp(8));
+        tools.setBackground(round(surface, dp(26), line));
         tools.setElevation(dp(8));
 
         Button zoomOut = button("−", false);
         zoomOut.setOnClickListener(v -> zoomBy(0.8f));
         Button fit = button("За шириною", false);
-        fit.setTextSize(12);
+        fit.setTextSize(13);
         fit.setTextColor(accent);
         fit.setOnClickListener(v -> {
             if (documentReady) {
@@ -158,11 +158,11 @@ public class PdfViewerActivity extends Activity {
 
         tools.addView(zoomOut, new LinearLayout.LayoutParams(dp(48), dp(44)));
         LinearLayout.LayoutParams fitParams = new LinearLayout.LayoutParams(0, dp(44), 1f);
-        fitParams.setMargins(dp(12), 0, dp(12), 0);
+        fitParams.setMargins(dp(10), 0, dp(10), 0);
         tools.addView(fit, fitParams);
         tools.addView(zoomIn, new LinearLayout.LayoutParams(dp(48), dp(44)));
         LinearLayout.LayoutParams toolsParams = new LinearLayout.LayoutParams(-1, dp(60));
-        toolsParams.topMargin = dp(8);
+        toolsParams.topMargin = dp(10);
         root.addView(tools, toolsParams);
 
         setContentView(root);
@@ -318,7 +318,7 @@ public class PdfViewerActivity extends Activity {
         b.setMinHeight(0);
         b.setMinimumHeight(0);
         b.setPadding(0, 0, 0, 0);
-        b.setBackground(round(surfaceAlt, dp(14), line));
+        b.setBackground(round(surfaceAlt, dp(15), line));
         b.setElevation(dp(1));
         return b;
     }
