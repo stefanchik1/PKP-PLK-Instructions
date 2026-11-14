@@ -47,6 +47,12 @@ public class MainActivity extends Activity {
     }
 
     private class AppBridge {
+        @JavascriptInterface public void setReaderTheme(String theme) {
+            if ("light".equals(theme) || "dark".equals(theme)) {
+                getPreferences(MODE_PRIVATE).edit().putString("reader_theme", theme).apply();
+            }
+        }
+
         @JavascriptInterface public void addOwnInstruction() {
             runOnUiThread(() -> {
                 Intent pick = new Intent(Intent.ACTION_OPEN_DOCUMENT);
