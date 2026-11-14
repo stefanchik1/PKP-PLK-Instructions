@@ -80,7 +80,7 @@ public class MainActivity extends Activity {
                     URL requested = checkedUrl(address);
                     String actualAddress = requested.toString();
                     // Static catalogue cards may point to a category page, not directly to a PDF.
-                    if (!actualAddress.toLowerCase().matches(".*\\\\.pdf([?#].*)?$")) {
+                    if (!actualAddress.toLowerCase().matches(".*\\.pdf([?#].*)?$")) {
                         String pageHtml = downloadText(actualAddress);
                         JSONArray candidates = extractDocuments(pageHtml, actualAddress);
                         String wantedCode = title == null ? "" : title.split("\\s+", 2)[0].trim();
@@ -256,15 +256,21 @@ public class MainActivity extends Activity {
     private JSONArray extractDocuments(String html, String base) throws Exception {
         JSONArray out=new JSONArray();
         java.util.regex.Matcher m=java.util.regex.Pattern.compile("(?is)<a\\b[^>]*href\\s*=\\s*['\\\"]([^'\\\"]+)['\\\"][^>]*>(.*?)</a>").matcher(html);
+        java.util.LinkedHashMap<String, String> unique = new java.util.LinkedHashMap<>();
         while(m.find()) {
             String href=m.group(1).replace("&amp;","&");
             String label=m.group(2).replaceAll("(?is)<[^>]+>"," ").replaceAll("\\s+"," ").trim();
             String lower=(href+" "+label).toLowerCase();
-            if(!(lower.contains(".pdf")||label.toLowerCase().contains("pobierz pdf"))) continue;
+            if(!lower.contains(".pdf")) continue;
             if(href.startsWith("/")) href="https://www.plk-sa.pl"+href;
             else if(!href.startsWith("http")) href=base+"/"+href;
             try { checkedUrl(href); } catch(Exception ignored) { continue; }
-            JSONObject item=new JSONObject(); item.put("title",label.isEmpty()?"Dokument PDF":label); item.put("url",href); out.put(item);
+            String cleanTitle = label.isEmpty() ? "Dokument PDF" : label;
+            String old = unique.get(href);
+            if (old == null || cleanTitle.length() > old.length()) unique.put(href, cleanTitle);
+        }
+        for (java.util.Map.Entry<String, String> entry : unique.entrySet()) {
+            JSONObject item=new JSONObject(); item.put("title",entry.getValue()); item.put("url",entry.getKey()); out.put(item);
         }
         return out;
     }
