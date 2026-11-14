@@ -49,7 +49,7 @@ public class MainActivity extends Activity {
     private class AppBridge {
         @JavascriptInterface public void setReaderTheme(String theme) {
             if ("light".equals(theme) || "dark".equals(theme)) {
-                getPreferences(MODE_PRIVATE).edit().putString("reader_theme", theme).apply();
+                getSharedPreferences("plk_settings", MODE_PRIVATE).edit().putString("reader_theme", theme).apply();
             }
         }
 
