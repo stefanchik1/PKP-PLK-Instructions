@@ -146,7 +146,6 @@ public class PdfViewerActivity extends Activity {
         fit.setOnClickListener(v -> {
             if (documentReady) {
                 pdfView.resetZoomWithAnimation();
-                pdfView.fitToWidth();
             }
         });
         Button zoomIn = button("+", false);
