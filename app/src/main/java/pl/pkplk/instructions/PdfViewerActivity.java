@@ -35,7 +35,7 @@ public class PdfViewerActivity extends Activity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        dark = "dark".equals(getPreferences(MODE_PRIVATE).getString("reader_theme", "dark"));
+        dark = true;
         landscape = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
         applyPalette();
 
@@ -211,24 +211,15 @@ public class PdfViewerActivity extends Activity {
     }
 
     private void applyPalette() {
-        bg = Color.rgb(12, 18, 28);
-        surface = Color.rgb(20, 30, 44);
-        surfaceAlt = Color.rgb(31, 44, 62);
-        text = Color.rgb(237, 243, 250);
-        muted = Color.rgb(151, 168, 188);
-        line = Color.rgb(48, 65, 86);
-        accent = Color.rgb(91, 166, 239);
-        pageCanvas = Color.rgb(31, 39, 50);
-        if (!dark) {
-            bg = Color.rgb(242, 245, 249);
-            surface = Color.WHITE;
-            surfaceAlt = Color.rgb(241, 245, 249);
-            text = Color.rgb(25, 39, 55);
-            muted = Color.rgb(103, 119, 138);
-            line = Color.rgb(222, 229, 237);
-            accent = Color.rgb(36, 121, 202);
-            pageCanvas = Color.rgb(226, 232, 239);
-        }
+        // AMOLED reader: true black canvas with restrained dark-grey controls.
+        bg = Color.BLACK;
+        surface = Color.rgb(10, 10, 10);
+        surfaceAlt = Color.rgb(22, 22, 22);
+        text = Color.rgb(245, 245, 245);
+        muted = Color.rgb(150, 150, 150);
+        line = Color.rgb(42, 42, 42);
+        accent = Color.rgb(100, 181, 246);
+        pageCanvas = Color.rgb(0, 0, 0);
         getWindow().setStatusBarColor(surface);
         getWindow().setNavigationBarColor(surface);
         if (android.os.Build.VERSION.SDK_INT >= 23) {
