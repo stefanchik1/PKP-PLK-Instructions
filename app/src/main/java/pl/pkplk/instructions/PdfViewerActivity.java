@@ -153,7 +153,8 @@ public class PdfViewerActivity extends Activity {
         fit.setTextColor(accent);
         fit.setOnClickListener(v -> {
             if (documentReady) {
-                pdfView.resetZoomWithAnimation();
+                int currentPage = pdfView.getCurrentPage();
+                pdfView.fitToWidth(currentPage);
             }
         });
         Button zoomIn = button("+", false);
