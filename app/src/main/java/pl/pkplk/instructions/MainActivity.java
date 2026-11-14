@@ -77,7 +77,27 @@ public class MainActivity extends Activity {
         @JavascriptInterface public void downloadPdf(String address, String title) {
             new Thread(() -> {
                 try {
-                    URL url = checkedUrl(address);
+                    URL requested = checkedUrl(address);
+                    String actualAddress = requested.toString();
+                    // Static catalogue cards may point to a category page, not directly to a PDF.
+                    if (!actualAddress.toLowerCase().matches(".*\\\\.pdf([?#].*)?$")) {
+                        String pageHtml = downloadText(actualAddress);
+                        JSONArray candidates = extractDocuments(pageHtml, actualAddress);
+                        String wantedCode = title == null ? "" : title.split("\\s*[—–-]\\s*", 2)[0].trim();
+                        String selected = null;
+                        for (int i = 0; i < candidates.length(); i++) {
+                            JSONObject candidate = candidates.optJSONObject(i);
+                            if (candidate == null) continue;
+                            String candidateTitle = candidate.optString("title", "");
+                            if (!wantedCode.isEmpty() && candidateTitle.toLowerCase().contains(wantedCode.toLowerCase())) {
+                                selected = candidate.optString("url"); break;
+                            }
+                        }
+                        if (selected == null && candidates.length() > 0) selected = candidates.optJSONObject(0).optString("url");
+                        if (selected == null || selected.isEmpty()) throw new IOException("Nie znaleziono bezpośredniego pliku PDF na stronie PKP PLK");
+                        actualAddress = selected;
+                    }
+                    URL url = checkedUrl(actualAddress);
                     HttpURLConnection c = (HttpURLConnection) url.openConnection();
                     c.setInstanceFollowRedirects(true); c.setConnectTimeout(20000); c.setReadTimeout(30000);
                     c.setRequestProperty("User-Agent", "PKP-PLK-Instructions-Android/2.0");
