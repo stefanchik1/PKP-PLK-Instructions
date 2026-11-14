@@ -35,8 +35,7 @@ public class PdfViewerActivity extends Activity {
     private final Handler main = new Handler(Looper.getMainLooper());
     private final ExecutorService renderQueue = Executors.newSingleThreadExecutor();
     private final Set<Integer> rendering = new HashSet<>();
-    private final ImageView[] pageViews = new ImageView[0];
-    private ImageView[] images;
+    private TouchZoomImageView[] images;
     private TextView[] pageLabels;
     private Bitmap[] bitmaps;
     private boolean closed = false;
@@ -160,7 +159,7 @@ public class PdfViewerActivity extends Activity {
             descriptor = ParcelFileDescriptor.open(f, ParcelFileDescriptor.MODE_READ_ONLY);
             renderer = new PdfRenderer(descriptor);
             pageCount = renderer.getPageCount();
-            images = new ImageView[pageCount];
+            images = new TouchZoomImageView[pageCount];
             pageLabels = new TextView[pageCount];
             bitmaps = new Bitmap[pageCount];
             pageTotal.setText("/ " + pageCount + " сторінок");
