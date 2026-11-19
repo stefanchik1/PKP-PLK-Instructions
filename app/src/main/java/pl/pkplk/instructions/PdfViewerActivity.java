@@ -29,6 +29,8 @@ public class PdfViewerActivity extends Activity {
     private boolean landscape = false;
     private boolean controlsVisible = true;
     private boolean dark = true;
+    private android.content.SharedPreferences readerState;
+    private String pageStateKey;
     private int bg, surface, surfaceAlt, text, muted, line, accent, pageCanvas;
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
     private final Runnable hideControls = () -> setReaderControlsVisible(false);
@@ -181,6 +183,8 @@ public class PdfViewerActivity extends Activity {
             return;
         }
         File file = new File(path);
+        readerState = getSharedPreferences("pdf_reader_state", MODE_PRIVATE);
+        pageStateKey = "page_" + Integer.toHexString(file.getAbsolutePath().hashCode());
         title.setText(file.getName().replaceAll("(?i)\\.pdf$", ""));
 
         pdfView.setMinZoom(1f);
@@ -202,13 +206,19 @@ public class PdfViewerActivity extends Activity {
                 documentReady = true;
                 loading.setVisibility(View.GONE);
                 pageCountLabel.setText("СТОРІНКА  /  " + pages);
-                updatePageControls(0);
-                if (landscape) {
-                    pdfView.post(() -> pdfView.resetZoom());
-                    setReaderControlsVisible(false);
-                }
+                int savedPage = readerState.getInt(pageStateKey, 0);
+                int restorePage = Math.max(0, Math.min(pages - 1, savedPage));
+                pdfView.post(() -> {
+                    if (restorePage > 0) pdfView.jumpTo(restorePage, false);
+                    updatePageControls(restorePage);
+                    if (landscape) pdfView.resetZoom();
+                });
+                setReaderControlsVisible(false);
             })
-            .onPageChange((page, pages) -> updatePageControls(page))
+            .onPageChange((page, pages) -> {
+                updatePageControls(page);
+                saveReadingPosition(page);
+            })
             .onError(error -> {
                 loading.setVisibility(View.GONE);
                 Toast.makeText(this, "Помилка читання PDF: " +
@@ -273,6 +283,26 @@ public class PdfViewerActivity extends Activity {
     @Override public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus && !controlsVisible) setReaderControlsVisible(false);
+    }
+
+    private void saveReadingPosition() {
+        if (documentReady && pdfView != null) saveReadingPosition(pdfView.getCurrentPage());
+    }
+
+    private void saveReadingPosition(int page) {
+        if (readerState != null && pageStateKey != null && page >= 0) {
+            readerState.edit().putInt(pageStateKey, page).apply();
+        }
+    }
+
+    @Override protected void onPause() {
+        saveReadingPosition();
+        super.onPause();
+    }
+
+    @Override protected void onStop() {
+        saveReadingPosition();
+        super.onStop();
     }
 
     private void updatePageControls(int page) {
