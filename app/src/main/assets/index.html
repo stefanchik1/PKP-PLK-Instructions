@@ -284,114 +284,120 @@ function render(){
 let mainView='catalog';function setMainView(view){mainView=view;document.querySelectorAll('.main-tab').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.querySelectorAll('.main-view').forEach(v=>v.style.display=v.id===(view==='catalog'?'catalogView':view==='downloaded'?'downloadedView':'examplesView')?'block':'none');$('searchWrap').style.display=view==='catalog'?'flex':'none';}
 document.querySelectorAll('.main-tab').forEach(b=>b.onclick=()=>setMainView(b.dataset.view));
 $('q').addEventListener('input',render);$('clear').onclick=()=>{$('q').value='';render()};document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});$('refresh').onclick=()=>{ $('syncstatus').textContent='Оновлюю каталог інструкцій…'; if(window.PLKApp&&PLKApp.refreshCatalog){catalogLoading=true;PLKApp.refreshCatalog()}else{$('syncstatus').textContent='Оновлення каталогу доступне у встановленому APK.'}};$('allfav').onclick=()=>{tab='saved';render();setMainView('catalog')};window.onCatalogRefresh=function(data,success){catalogLoading=false;let total=0;data.forEach(x=>total+=(x.documents||[]).length);catalogSnapshot={checkedAt:new Date().toISOString(),success:success,total:total,data:data};localStorage.setItem('plkCatalogSnapshot',JSON.stringify(catalogSnapshot));$('syncstatus').textContent='Оновлено '+success+'/13 категорій · знайдено '+total+' PDF · '+new Date().toLocaleString('pl-PL');render();if(success===0){$('syncresults').innerHTML='<div class="empty">Не вдалося отримати каталог PKP PLK. Перевір інтернет і натисни «Оновити каталог».</div>';}};window.onPdfProgress=function(title,p){$('syncstatus').textContent='Pobieranie: '+title+(p>=0?' · '+p+'%':'…')};window.onPdfDownloaded=function(item){$('syncstatus').textContent='Zapisano offline: '+item.title;PLKApp.listDownloadedDocuments()};window.onPdfError=function(title,error){$('syncstatus').textContent='Błąd pobierania: '+error;alert('Nie udało się pobrać PDF: '+error)};window.onOfflineList=function(items){$('offlinecount').textContent=items.length+' plikів';$('offline').innerHTML=items.map(x=>'<article class="doc"><div class="pdf">PDF</div><div class="docmain"><b>'+String(x.title).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))+'</b><small>'+((x.size/1048576).toFixed(1))+' MB · '+(x.custom?'Власний документ':'Завантажено з каталогу')+'</small></div><button class="iconbtn offline-open" data-file="'+x.file+'">Відкрити</button><button class="iconbtn offline-rename" data-file="'+x.file+'" data-title="'+String(x.title).replace(/"/g,'&quot;')+'">✎</button><button class="iconbtn offline-delete" data-file="'+x.file+'">×</button></article>').join('')||'<div class="empty">Бібліотека порожня. Додай свій PDF або завантаж документ із каталогу.</div>';document.querySelectorAll('.offline-open').forEach(b=>b.onclick=()=>PLKApp.openDownloadedDocument(b.dataset.file));document.querySelectorAll('.offline-rename').forEach(b=>b.onclick=()=>{let n=prompt('Нова назва документа:',b.dataset.title);if(n&&n.trim())PLKApp.renameDownloadedDocument(b.dataset.file,n.trim())});document.querySelectorAll('.offline-delete').forEach(b=>b.onclick=()=>{if(confirm('Видалити цей документ із пам’яті телефона?'))PLKApp.deleteDownloadedDocument(b.dataset.file)});};$('add-own').onclick=()=>{if(window.PLKApp&&PLKApp.addOwnInstruction)PLKApp.addOwnInstruction();else alert('Додавання PDF доступне у встановленому APK.');};if(window.PLKApp&&PLKApp.listDownloadedDocuments)PLKApp.listDownloadedDocuments();let cached=localStorage.getItem('plkCatalogSnapshot');if(cached){try{catalogSnapshot=JSON.parse(cached);$('syncstatus').textContent='Lokalna kopia katalogu: '+catalogSnapshot.total+' dokumentów · '+new Date(catalogSnapshot.checkedAt).toLocaleString('pl-PL');renderCategoryDocuments();}catch(e){}}
-const translations={
- "Biblioteka dokumentów kolejowych":"Бібліотека залізничних документів",
- "☷ Каталог":"☷ Katalog","↓ Завантажені":"↓ Pobrane","▤ Приклади":"▤ Przykłady",
- "＋ Додати PDF":"＋ Dodaj PDF","Uprawnienia:":"Дозволи:","Wybierz kategorię":"Вибери категорію",
- "Показати інструкції":"Pokaż instrukcje","Вибери категорію інструкцій":"Wybierz kategorię instrukcji",
- "Завантажені на телефоні":"Zapisane na telefonie","Збережені на телефоні":"Zapisane na telefonie",
- "Обране":"Ulubione","Вибрані":"Wybrane","Завантажити":"Pobierz","Відкрити":"Otwórz",
- "Завантаження:":"Pobieranie:","Збережено офлайн:":"Zapisano offline:","Помилка завантаження:":"Błąd pobierania:",
- "Офіційний файл · PDF":"Oficjalny plik · PDF","Офіційний PDF":"Oficjalny PDF",
- "Документи будуть показані тут, без переходу на сайт":"Dokumenty zostaną wyświetlone tutaj, bez przechodzenia na stronę internetową",
- "Завантажую інструкції вибраної категорії…":"Pobieram instrukcje wybranej kategorii…",
- "Завантажую список PDF з офіційного каталогу PKP PLK…":"Pobieram listę PDF z oficjalnego katalogu PKP PLK…",
- "Завантажую повний каталог для пошуку…":"Pobieram pełny katalog do wyszukiwania…",
- "Завантажую повний каталог інструкцій…":"Pobieram pełny katalog instrukcji…",
- "Перевірити інтернет і натисни «Оновити каталог».":"Sprawdź internet i kliknij „Odśwież katalog”.",
- "Натисни «Оновити каталог».":"Kliknij „Odśwież katalog”.",
- "Каталог ще не завантажено.":"Katalog nie został jeszcze pobrany.",
- "Вибери одну з 13 категорій вище.":"Wybierz jedną z 13 kategorii powyżej.",
- "У цій категорії PDF не знайдено. Онови каталог пізніше.":"W tej kategorii nie znaleziono PDF. Zaktualizuj katalog później.",
- "Бібліотека порожня. Додай власний PDF або завантаж документ із каталогу.":"Biblioteka jest pusta. Dodaj własny PDF lub pobierz dokument z katalogu.",
- "Додавання PDF доступне у встановленому APK.":"Dodawanie PDF jest dostępne w zainstalowanej aplikacji.",
- "Завантаження доступне у встановленому APK.":"Pobieranie jest dostępne w zainstalowanej aplikacji.",
- "Нова назва документа:":"Nowa nazwa dokumentu:","Видалити цей документ із пам’яті телефона?":"Usunąć ten dokument z pamięci telefonu?",
- "Пошук: Ir-1, сигналізація, колії…":"Szukaj: Ir-1, sygnalizacja, tory…",
- "Пошук по всьому каталогу":"Wyszukiwanie w całym katalogu","Знайдені інструкції":"Znalezione instrukcje",
- "Вибери потрібний документ і натисни «Завантажити»":"Wybierz dokument i kliknij „Pobierz”",
- "За цим запитом нічого не знайдено. Спробуй код, наприклад Ir-1, або частину назви.":"Nie znaleziono wyników. Spróbuj kodu, np. Ir-1, lub części nazwy.",
- "Моя бібліотека":"Moja biblioteka","Збережені на телефоні":"Zapisane na telefonie",
- "Приклади документів":"Przykładowe dokumenty","Швидкий доступ до популярних інструкцій":"Szybki dostęp do popularnych instrukcji",
- "Незалежний інформаційний проєкт · не пов’язаний із PKP PLK":"Niezależny projekt informacyjny · bez powiązania z PKP PLK",
- "Основний каталог: plk-sa.pl · оновлення метаданих на вимогу":"Katalog główny: plk-sa.pl · odświeżanie metadanych na żądanie",
- "Zmień motyw":"Змінити тему","Instrukcje kolejowe":"Залізничні інструкції",
- "Katalog":"Каталог","Zawartość":"Вміст","Pokaż instrukcje":"Показати інструкції",
- "Каталог":"Каталог","Завантажені":"Завантажені","Приклади":"Приклади",
- "↻ Оновити каталог":"↻ Оновити каталог","★ Обрані категорії":"★ Обрані категорії",
- "Wszystkie kategorie":"Усі категорії","Усі категорії":"Усі категорії",
- "Wybór":"Вибране","Wybrane":"Вибрані","Ulubione ★":"Обране ★",
- "Категорії інструкцій":"Категорії інструкцій","Wybierz kategorię instrukcji":"Вибери категорію інструкцій",
- "Wybierz kategorię instrukcji":"Вибери категорію інструкцій",
- "Dokumenty z katalogu PLK":"Документи з каталогу PLK",
- "Katalog nie został jeszcze zaktualizowany":"Каталог ще не оновлено",
- "Moja biblioteka":"Моя бібліотека","＋ Dodaj PDF":"＋ Додати PDF",
- "Zapisane na telefonie":"Збережені на телефоні","0 plików":"0 файлів",
- "Przykładowe dokumenty":"Приклади документів","Szybki dostęp do popularnych instrukcji":"Швидкий доступ до популярних інструкцій",
- "Sprawdź aktualizacje PLK":"Перевірити оновлення PLK",
- "Pobierz":"Завантажити","Otwórz":"Відкрити","Ulubiona kategoria":"Обрана категорія",
- "Ulubione":"Обране","Pobierz PDF":"Завантажити PDF",
- "Dokumenty są pobierane z oficjalnych adresów PKP PLK i przechowywane lokalnie na urządzeniu. Korzystanie i dalsze udostępnianie odbywa się zgodnie z zakresem uzyskanych zgód.":"Документи завантажуються з офіційних адрес PKP PLK і зберігаються локально на пристрої. Використання та подальше поширення відбуваються відповідно до отриманих дозволів.",
- "Bezpieczeństwo:":"Безпека:",
- "aplikacja jest niezależnym katalogiem pomocniczym, nie jest oficjalnym narzędziem PKP PLK. Nie zastępuje obowiązujących instrukcji, regulaminów ani poleceń uprawnionych pracowników. Przed zastosowaniem sprawdź aktualność dokumentu u wydawcy.":"застосунок є незалежним допоміжним каталогом, а не офіційним інструментом PKP PLK. Він не замінює чинних інструкцій, правил або розпоряджень уповноважених працівників. Перед використанням перевір актуальність документа у видавця.",
- "Niezależny projekt informacyjny · bez powiązania z PKP PLK":"Незалежний інформаційний проєкт · не пов’язаний із PKP PLK",
- "Katalog główny: plk-sa.pl · odświeżanie metadanych na żądanie":"Основний каталог: plk-sa.pl · оновлення метаданих на вимогу",
- "Pobieranie:":"Завантаження:","Zapisano offline:":"Збережено офлайн:",
- "Błąd pobierania:":"Помилка завантаження:","Nie udało się pobrać PDF:":"Не вдалося завантажити PDF:",
- "Nowa nazwa dokumentu:":"Нова назва документа:",
- "Usunąć ten dokument z pamięci telefonu?":"Видалити цей документ із пам’яті телефона?",
- "Biblioteka jest pusta. Dodaj własny PDF lub pobierz dokument z katalogu.":"Бібліотека порожня. Додай власний PDF або завантаж документ із каталогу.",
- "Каталог ще не завантажено. Натисnij «Sprawdź aktualizacje PLK».":"Каталог ще не завантажено. Натисни «Оновити каталог».",
- "Wybierz jedną z 13 kategorii powyżej.":"Вибери одну з 13 категорій вище.",
- "Dokumenty zostaną wyświetlone tutaj, bez przechodzenia na stronę internetową":"Документи відображатимуться тут без переходу на сайт",
- "Nie znaleziono kategorii.":"Категорій не знайдено.",
- "Nie znaleziono wyników w przykładach.":"Немає результатів у прикладах.",
- "Wyniki wyszukiwania":"Результати пошуку",
- "Znalezione instrukcje":"Знайдені інструкції",
- "Wybierz dokument i kliknij „Pobierz”":"Вибери документ і натисни «Завантажити»",
- "Nie znaleziono dokumentów. Spróbuj kodu, np. Ir-1, lub części nazwy.":"За цим запитом нічого не знайдено. Спробуй код, наприклад Ir-1, або частину назви.",
- "Pobierz PDF":"Завантажити PDF","Oficjalny plik · PDF":"Офіційний файл · PDF",
- "Lokalna kopia katalogu:":"Локальна копія каталогу:",
- "Zaktualizowano":"Оновлено","kategorii":"категорій","dokumentów":"документів",
- "Katalog nie został jeszcze zaktualizowany":"Каталог ще не оновлено",
- "Pobieram instrukcje wybranej kategorii…":"Завантажую інструкції вибраної категорії…",
- "Pobieram listę PDF z oficjalnego katalogu PKP PLK…":"Завантажую список PDF з офіційного каталогу PKP PLK…",
- "Nie udało się pobrać katalogu PKP PLK. Sprawdź internet i spróbuj ponownie.":"Не вдалося отримати каталог PKP PLK. Перевір інтернет і спробуй ще раз.",
- "Pobieram pełny katalog do wyszukiwania…":"Завантажую повний каталог для пошуку…",
- "Pobieram pełny katalog instrukcji…":"Завантажую повний каталог інструкцій…",
- "W tej kategorii nie znaleziono PDF. Zaktualizuj katalog później.":"У цій категорії PDF не знайдено. Онови каталог пізніше.",
- "Zapisano na telefonie":"Збережено на телефоні",
- "Dokument własny":"Власний документ","Pobrano z katalogu":"Завантажено з каталогу",
- "Dodawanie PDF jest dostępne w zainstalowanej aplikacji.":"Додавання PDF доступне у встановленому застосунку.",
- "Pobieranie jest dostępne w zainstalowanej aplikacji.":"Завантаження доступне у встановленому застосунку."
-};
-const reverseTranslations=Object.fromEntries(Object.entries(translations).map(([a,b])=>[b,a]));
-let appLanguage=localStorage.getItem('appLanguage')||'pl';
-function translateValue(value){
- const dict=appLanguage==='uk'?translations:reverseTranslations;
+const languagePairs=[
+["Biblioteka dokumentów kolejowych","Бібліотека залізничних документів"],
+["Instrukcje kolejowe","Залізничні інструкції"],
+["Katalog","Каталог"],["Pobrane","Завантажені"],["Przykłady","Приклади"],
+["☷ Katalog","☷ Каталог"],["↓ Pobrane","↓ Завантажені"],["▤ Przykłady","▤ Приклади"],
+["＋ Dodaj PDF","＋ Додати PDF"],["Uprawnienia:","Дозволи:"],["Bezpieczeństwo:","Безпека:"],
+["Wybierz język","Вибери мову"],["Zmień motyw","Змінити тему"],
+["Wszystkie kategorie","Усі категорії"],["Wybrane","Вибрані"],["Ulubione ★","Обране ★"],
+["Ulubione","Обране"],["Moja biblioteka","Моя бібліотека"],["Zapisane na telefonie","Збережені на телефоні"],
+["Przykładowe dokumenty","Приклади документів"],["Szybki dostęp do popularnych instrukcji","Швидкий доступ до популярних інструкцій"],
+["Dokumenty z katalogu PLK","Документи з каталогу PLK"],["Kategorie instrukcji","Категорії інструкцій"],
+["Wybierz kategorię instrukcji","Вибери категорію інструкцій"],["Wybierz kategorię","Вибери категорію"],
+["Pokaż instrukcje","Показати інструкції"],["Pobierz","Завантажити"],["Otwórz","Відкрити"],
+["Pobierz PDF","Завантажити PDF"],["Zapisano offline:","Збережено офлайн:"],["Pobieranie:","Завантаження:"],
+["Błąd pobierania:","Помилка завантаження:"],["Nie udało się pobrać PDF:","Не вдалося завантажити PDF:"],
+["Nowa nazwa dokumentu:","Нова назва документа:"],["Usunąć ten dokument z pamięci telefonu?","Видалити цей документ із пам’яті телефона?"],
+["Zapisane na telefonie","Збережені на телефоні"],["0 plików","0 файлів"],["plików","файлів"],
+["Dokument własny","Власний документ"],["Pobrano z katalogu","Завантажено з каталогу"],
+["Wyszukiwanie w całym katalogu","Пошук по всьому каталогу"],["Wyniki wyszukiwania","Результати пошуку"],
+["Znalezione instrukcje","Знайдені інструкції"],["Wybierz dokument i kliknij „Pobierz”","Вибери документ і натисни «Завантажити»"],
+["Nie znaleziono wyników. Spróbuj kodu, np. Ir-1, lub części nazwy.","За цим запитом нічого не знайдено. Спробуй код, наприклад Ir-1, або частину назви."],
+["Nie znaleziono wyników w przykładach.","Немає результатів у прикладах."],["Nie znaleziono kategorii.","Категорій не знайдено."],
+["Katalog nie został jeszcze pobrany.","Каталог ще не завантажено."],["Katalog nie został jeszcze zaktualizowany","Каталог ще не оновлено"],
+["Wybierz jedną z 13 kategorii powyżej.","Вибери одну з 13 категорій вище."],
+["Dokumenty zostaną wyświetlone tutaj, bez przechodzenia na stronę internetową","Документи відображатимуться тут без переходу на сайт"],
+["W tej kategorii nie znaleziono PDF. Zaktualizuj katalog później.","У цій категорії PDF не знайдено. Онови каталог пізніше."],
+["Biblioteka jest pusta. Dodaj własny PDF lub pobierz dokument z katalogu.","Бібліотека порожня. Додай власний PDF або завантаж документ із каталогу."],
+["Dodawanie PDF jest dostępne w zainstalowanej aplikacji.","Додавання PDF доступне у встановленому застосунку."],
+["Pobieranie jest dostępne w zainstalowanej aplikacji.","Завантаження доступне у встановленому застосунку."],
+["Pobieram instrukcje wybranej kategorii…","Завантажую інструкції вибраної категорії…"],
+["Pobieram listę PDF z oficjalnego katalogu PKP PLK…","Завантажую список PDF з офіційного каталогу PKP PLK…"],
+["Pobieram pełny katalog do wyszukiwania…","Завантажую повний каталог для пошуку…"],
+["Pobieram pełny katalog instrukcji…","Завантажую повний каталог інструкцій…"],
+["Nie udało się pobrać katalogu PKP PLK. Sprawdź internet i spróbuj ponownie.","Не вдалося отримати каталог PKP PLK. Перевір інтернет і спробуй ще раз."],
+["Sprawdź internet i kliknij „Odśwież katalog”.","Перевір інтернет і натисни «Оновити каталог»."],
+["Kliknij „Odśwież katalog”.","Натисни «Оновити каталог»."],
+["Odśwież katalog","Оновити каталог"],["↻ Odśwież katalog","↻ Оновити каталог"],
+["★ Ulubione kategorie","★ Обрані категорії"],["Kategorie instrukcji","Категорії інструкцій"],
+["Dokumenty z katalogu PLK","Документи з каталогу PLK"],["Pobierz dokument","Завантажити документ"],
+["Oficjalny plik · PDF","Офіційний файл · PDF"],["Oficjalny PDF","Офіційний PDF"],
+["Lokalna kopia katalogu:","Локальна копія каталогу:"],["Zaktualizowano","Оновлено"],
+["kategorii","категорій"],["dokumentów","документів"],["Sprawdź aktualizacje PLK","Перевірити оновлення PLK"],
+["Niezależny projekt informacyjny · bez powiązania z PKP PLK","Незалежний інформаційний проєкт · не пов’язаний із PKP PLK"],
+["Katalog główny: plk-sa.pl · odświeżanie metadanych na żądanie","Основний каталог: plk-sa.pl · оновлення метаданих на вимогу"],
+["Dokumenty są pobierane z oficjalnych adresów PKP PLK i przechowywane lokalnie na urządzeniu. Korzystanie i dalsze udostępnianie odbywa się zgodnie z zakresem uzyskanych zgód.","Документи завантажуються з офіційних адрес PKP PLK і зберігаються локально на пристрої. Використання та поширення відбуваються відповідно до отриманих дозволів."],
+["aplikacja jest niezależnym katalogiem pomocniczym, nie jest oficjalnym narzędziem PKP PLK. Nie zastępuje obowiązujących instrukcji, regulaminów ani poleceń uprawnionych pracowników. Przed zastosowaniem sprawdź aktualność dokumentu u wydawcy.","застосунок є незалежним допоміжним каталогом, а не офіційним інструментом PKP PLK. Він не замінює чинних інструкцій, правил або розпоряджень уповноважених працівників. Перед використанням перевір актуальність документа у видавця."],
+["Ruch i przewozy kolejowe","Залізничний рух і перевезення"],["Ruch pociągów, posterunki ruchu","Рух поїздів, пункти керування рухом"],
+["Sterowanie ruchem i łączność","Керування рухом і зв’язок"],["Ochrona środowiska","Охорона довкілля"],
+["Wymagania środowiskowe","Вимоги щодо довкілля"],["Geologia inżynierska","Інженерна геологія"],
+["Podłoże i zagadnienia geologiczne","Ґрунти та геологічні питання"],["Zasilanie i sieć trakcyjna","Електроживлення та контактна мережа"],
+["Bezpieczeństwo i higiena pracy","Охорона праці та безпека"],["Bezpieczeństwo pracy","Безпека праці"],
+["Infrastruktura pasażerska","Пасажирська інфраструктура"],["Perony i obsługa pasażerów","Платформи та обслуговування пасажирів"],
+["Pojazdy kolejowe","Залізничний рухомий склад"],["Pojazdy i zagadnienia techniczne","Рухомий склад і технічні питання"],
+["Sprawy organizacyjno-administracyjne","Організаційно-адміністративні питання"],["Kancelaria, archiwum i zasoby ludzkie","Канцелярія, архів і персонал"],
+["Geodezja kolejowa","Залізнична геодезія"],["Pomiary i dokumentacja geodezyjna","Вимірювання та геодезична документація"],
+["Elektroenergetyka kolejowa","Залізнична електроенергетика"],["Logistyka","Логістика"],["Procesy logistyczne","Логістичні процеси"],
+["Linie kolejowe","Залізничні лінії"],["Nawierzchnia i utrzymanie infrastruktury","Колійна конструкція та утримання інфраструктури"],
+["Pozostałe","Інше"],["Inne instrukcje i dokumenty","Інші інструкції та документи"]
+];
+const documentTextPairs=[
+["Obowiązuje od","Чинна з"],["Wchodzi w życie od","Набирає чинності з"],
+["dział Ruch i przewozy","розділ «Рух і перевезення»"],["dział Linie kolejowe","розділ «Залізничні лінії»"],
+["Sprawdź datę wejścia w życie na stronie wydawcy","Перевір дату набрання чинності на сайті видавця"],
+["Instrukcja o prowadzeniu ruchu pociągów","Інструкція з організації руху поїздів"],
+["Prowadzenie ruchu z wykorzystaniem ERTMS/ETCS poziomu 1","Організація руху з використанням ERTMS/ETCS рівня 1"],
+["Prowadzenie ruchu z wykorzystaniem ERTMS/ETCS poziomu 2","Організація руху з використанням ERTMS/ETCS рівня 2"],
+["Instrukcja dla pracowników posterunków nastawczych","Інструкція для працівників постів централізації"],
+["Instrukcja obsługi przejazdów kolejowo-drogowych i przejść","Інструкція з обслуговування залізничних переїздів і переходів"],
+["Postępowanie w sprawach wypadków i incydentów","Порядок дій у разі аварій та інцидентів"],
+["Instrukcja o technice wykonywania manewrów","Інструкція з техніки виконання маневрової роботи"],
+["Instrukcja o zapewnieniu sprawności kolei w zimie","Інструкція із забезпечення роботи залізниці взимку"],
+["Warunki techniczne utrzymania nawierzchni na liniach kolejowych","Технічні умови утримання колійної конструкції на залізничних лініях"],
+["Oględziny, badania techniczne i utrzymanie rozjazdów","Огляди, технічні перевірки та утримання стрілочних переводів"],
+["Zabezpieczenie miejsca robót na torze zamkniętym","Огородження місця робіт на закритій колії"]
+];
+function translateNodeText(value){
+ const target=appLanguage==='uk'?1:0, source=1-target;
  let result=value;
- const pairs=Object.entries(dict).sort((a,b)=>b[0].length-a[0].length);
- for(const [from,to] of pairs){if(result.includes(from)) result=result.split(from).join(to);}
+ const pairs=languagePairs.concat(documentTextPairs);
+ pairs.sort((a,b)=>b[source].length-a[source].length);
+ for(const pair of pairs){
+   if(result===pair[source]) return pair[target];
+   if(result.includes(pair[source])) result=result.split(pair[source]).join(pair[target]);
+ }
  return result;
 }
 function applyLanguage(){
  document.documentElement.lang=appLanguage;
  if(window.PLKApp&&PLKApp.setAppLanguage)PLKApp.setAppLanguage(appLanguage);
- document.querySelectorAll('#language option').forEach(o=>o.selected=o.value===appLanguage);
+ const selector=$('language'); if(selector)selector.value=appLanguage;
  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
  let node;
  while(node=walker.nextNode()){
-   if(node.parentElement&&['SCRIPT','STYLE','OPTION'].includes(node.parentElement.tagName)) continue;
-   node.nodeValue=translateValue(node.nodeValue);
+   const parent=node.parentElement;
+   if(!parent||['SCRIPT','STYLE','OPTION'].includes(parent.tagName))continue;
+   // Official PDF/document titles are intentionally kept in the publisher's original language.
+   if(parent.closest('.docmain b'))continue;
+   const translated=translateNodeText(node.nodeValue);
+   if(translated!==node.nodeValue)node.nodeValue=translated;
  }
  const attrs=['placeholder','aria-label','title'];
- document.querySelectorAll('*').forEach(el=>attrs.forEach(attr=>{
-   const value=el.getAttribute(attr);if(value)el.setAttribute(attr,translateValue(value));
- }));
+ document.querySelectorAll('*').forEach(el=>{
+   if(el.closest('.docmain b'))return;
+   attrs.forEach(attr=>{const value=el.getAttribute(attr);if(value){const translated=translateNodeText(value);if(translated!==value)el.setAttribute(attr,translated);}});
+ });
 }
+appLanguage=localStorage.getItem('appLanguage')||'pl';
 $('language').value=appLanguage;
-$('q').placeholder=appLanguage==='uk'?'Пошук: Ir-1, сигналізація, колії…':'Szukaj: Ir-1, sygnalizacja, tory…';
-$('language').onchange=()=>{appLanguage=$('language').value;localStorage.setItem('appLanguage',appLanguage);if(window.PLKApp&&PLKApp.setAppLanguage)PLKApp.setAppLanguage(appLanguage);$('q').placeholder=appLanguage==='uk'?'Пошук: Ir-1, сигналізація, колії…':'Szukaj: Ir-1, sygnalizacja, tory…';applyLanguage();};
+$('language').onchange=()=>{
+ appLanguage=$('language').value;
+ localStorage.setItem('appLanguage',appLanguage);
+ applyLanguage();
+ $('q').placeholder=appLanguage==='uk'?'Пошук: Ir-1, сигналізація, колії…':'Szukaj: Ir-1, sygnalizacja, tory…';
+};
 const languageObserver=new MutationObserver(()=>applyLanguage());
 languageObserver.observe(document.body,{childList:true,subtree:true});
 let theme=localStorage.getItem('theme')||'dark';function setTheme(t){theme=t;document.documentElement.dataset.theme=t==='light'?'light':'dark';$('theme').textContent=t==='light'?'☾':'☀';localStorage.setItem('theme',t);if(window.PLKApp&&PLKApp.setReaderTheme)PLKApp.setReaderTheme(t)}$('theme').onclick=()=>setTheme(theme==='dark'?'light':'dark');setTheme(theme);applyLanguage();render();
