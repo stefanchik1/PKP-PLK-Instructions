@@ -45,7 +45,7 @@ public class PdfViewerActivity extends Activity {
         } else if ("landscape".equals(savedOrientation)) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         }
-        dark = true;
+        dark = "dark".equals(getSharedPreferences("plk_settings", MODE_PRIVATE).getString("reader_theme", "dark"));
         landscape = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
         applyPalette();
 
@@ -94,54 +94,17 @@ public class PdfViewerActivity extends Activity {
         root.addView(header, headerParams);
 
         pageBar = new LinearLayout(this);
-        pageBar.setGravity(Gravity.CENTER_VERTICAL);
-        pageBar.setPadding(dp(10), dp(6), dp(10), dp(6));
-        pageBar.setBackground(round(surface, dp(24), line));
-        pageBar.setElevation(dp(3));
-
-        previous = button("‹", true);
-        previous.setOnClickListener(v -> jumpToCurrent(-1));
-        pageBar.addView(previous, new LinearLayout.LayoutParams(dp(40), dp(40)));
-
-        pageInput = new EditText(this);
-        pageInput.setSingleLine(true);
-        pageInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        pageInput.setImeOptions(EditorInfo.IME_ACTION_GO);
-        pageInput.setTextColor(text);
-        pageInput.setTextSize(14);
-        pageInput.setTypeface(null, android.graphics.Typeface.BOLD);
-        pageInput.setGravity(Gravity.CENTER);
-        pageInput.setSelectAllOnFocus(true);
-        pageInput.setBackground(round(surfaceAlt, dp(13), line));
-        pageInput.setHintTextColor(muted);
-        pageInput.setHint("1");
-        pageInput.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE ||
-                (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
-                goToPageFromInput();
-                return true;
-            }
-            return false;
-        });
-        LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(dp(52), dp(40));
-        inputParams.setMargins(dp(8), 0, dp(7), 0);
-        pageBar.addView(pageInput, inputParams);
-
+        pageBar.setGravity(Gravity.CENTER);
+        pageBar.setPadding(dp(14), dp(5), dp(14), dp(5));
+        pageBar.setBackground(round(surface, dp(22), line));
+        pageBar.setElevation(dp(5));
         pageCountLabel = new TextView(this);
-        pageCountLabel.setText("СТОРІНКА  /  —");
-        pageCountLabel.setTextColor(muted);
-        pageCountLabel.setTextSize(10);
+        pageCountLabel.setText("1  /  —");
+        pageCountLabel.setTextColor(text);
+        pageCountLabel.setTextSize(12);
         pageCountLabel.setTypeface(null, android.graphics.Typeface.BOLD);
-        pageCountLabel.setLetterSpacing(0.06f);
-        pageBar.addView(pageCountLabel, new LinearLayout.LayoutParams(0, -2, 1));
-
-        next = button("›", true);
-        next.setOnClickListener(v -> jumpToCurrent(1));
-        pageBar.addView(next, new LinearLayout.LayoutParams(dp(40), dp(40)));
-        LinearLayout.LayoutParams pageBarParams = new LinearLayout.LayoutParams(-1, dp(56));
-        pageBarParams.bottomMargin = dp(10);
-        root.addView(pageBar, pageBarParams);
-
+        pageCountLabel.setLetterSpacing(0.04f);
+        pageBar.addView(pageCountLabel, new LinearLayout.LayoutParams(-2, -2));
         loading = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         loading.setIndeterminate(false);
         loading.setMax(1000);
@@ -157,6 +120,7 @@ public class PdfViewerActivity extends Activity {
         pdfView = new PDFView(this, null);
         pdfView.setBackgroundColor(pageCanvas);
         root.addView(pdfView, new LinearLayout.LayoutParams(-1, 0, 1));
+        root.addView(pageBar, pageBarParams);
 
         tools = new LinearLayout(this);
         tools.setGravity(Gravity.CENTER);
@@ -201,7 +165,7 @@ public class PdfViewerActivity extends Activity {
         tools.addView(rotate, rotateParams);
         LinearLayout.LayoutParams toolsParams = new LinearLayout.LayoutParams(-1, dp(60));
         toolsParams.topMargin = dp(10);
-        root.addView(tools, toolsParams);
+        tools.setVisibility(View.GONE);
 
         setContentView(root);
         pdfView.setOnClickListener(v -> toggleReaderControls());
@@ -263,17 +227,28 @@ public class PdfViewerActivity extends Activity {
     }
 
     private void applyPalette() {
-        // AMOLED reader: true black canvas with restrained dark-grey controls.
-        bg = Color.BLACK;
-        surface = Color.rgb(10, 10, 10);
-        surfaceAlt = Color.rgb(22, 22, 22);
-        text = Color.rgb(245, 245, 245);
-        muted = Color.rgb(150, 150, 150);
-        line = Color.rgb(42, 42, 42);
-        accent = Color.rgb(100, 181, 246);
-        pageCanvas = Color.rgb(0, 0, 0);
-        getWindow().setStatusBarColor(surface);
-        getWindow().setNavigationBarColor(surface);
+        // AMOLED Glass palette: translucent floating surfaces over a clean canvas.
+        if (dark) {
+            bg = Color.rgb(4, 5, 9);
+            surface = Color.argb(232, 24, 27, 37);
+            surfaceAlt = Color.argb(238, 34, 39, 52);
+            text = Color.rgb(245, 247, 252);
+            muted = Color.rgb(157, 166, 184);
+            line = Color.argb(105, 135, 153, 184);
+            accent = Color.rgb(112, 181, 255);
+            pageCanvas = Color.rgb(5, 6, 10);
+        } else {
+            bg = Color.rgb(241, 244, 249);
+            surface = Color.argb(238, 255, 255, 255);
+            surfaceAlt = Color.argb(245, 247, 249, 253);
+            text = Color.rgb(27, 34, 48);
+            muted = Color.rgb(105, 116, 135);
+            line = Color.argb(150, 190, 201, 218);
+            accent = Color.rgb(39, 112, 202);
+            pageCanvas = Color.rgb(232, 237, 245);
+        }
+        getWindow().setStatusBarColor(bg);
+        getWindow().setNavigationBarColor(bg);
         if (android.os.Build.VERSION.SDK_INT >= 23) {
             int flags = dark ? 0 : View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
             if (!dark && android.os.Build.VERSION.SDK_INT >= 26) flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
@@ -339,13 +314,13 @@ public class PdfViewerActivity extends Activity {
 
     private void updatePageControls(int page) {
         runOnUiThread(() -> {
-            pageInput.setText(String.valueOf(page + 1));
-            pageCountLabel.setText("СТОРІНОК  /  " + totalPages);
+            if (pageInput != null) pageInput.setText(String.valueOf(page + 1));
+            pageCountLabel.setText((page + 1) + "  /  " + totalPages);
             if (totalPages > 0) loading.setProgress(page + 1);
-            previous.setEnabled(page > 0);
-            next.setEnabled(totalPages > 0 && page < totalPages - 1);
-            previous.setAlpha(page > 0 ? 1f : .38f);
-            next.setAlpha(totalPages > 0 && page < totalPages - 1 ? 1f : .38f);
+            if (previous != null) previous.setEnabled(page > 0);
+            if (next != null) next.setEnabled(totalPages > 0 && page < totalPages - 1);
+            if (previous != null) previous.setAlpha(page > 0 ? 1f : .38f);
+            if (next != null) next.setAlpha(totalPages > 0 && page < totalPages - 1 ? 1f : .38f);
         });
     }
 
