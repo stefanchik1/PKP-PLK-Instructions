@@ -376,6 +376,7 @@ function translateValue(value){
 }
 function applyLanguage(){
  document.documentElement.lang=appLanguage;
+ if(window.PLKApp&&PLKApp.setAppLanguage)PLKApp.setAppLanguage(appLanguage);
  document.querySelectorAll('#language option').forEach(o=>o.selected=o.value===appLanguage);
  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
  let node;
@@ -390,7 +391,7 @@ function applyLanguage(){
 }
 $('language').value=appLanguage;
 $('q').placeholder=appLanguage==='uk'?'Пошук: Ir-1, сигналізація, колії…':'Szukaj: Ir-1, sygnalizacja, tory…';
-$('language').onchange=()=>{appLanguage=$('language').value;localStorage.setItem('appLanguage',appLanguage);$('q').placeholder=appLanguage==='uk'?'Пошук: Ir-1, сигналізація, колії…':'Szukaj: Ir-1, sygnalizacja, tory…';applyLanguage();};
+$('language').onchange=()=>{appLanguage=$('language').value;localStorage.setItem('appLanguage',appLanguage);if(window.PLKApp&&PLKApp.setAppLanguage)PLKApp.setAppLanguage(appLanguage);$('q').placeholder=appLanguage==='uk'?'Пошук: Ir-1, сигналізація, колії…':'Szukaj: Ir-1, sygnalizacja, tory…';applyLanguage();};
 const languageObserver=new MutationObserver(()=>applyLanguage());
 languageObserver.observe(document.body,{childList:true,subtree:true});
 let theme=localStorage.getItem('theme')||'dark';function setTheme(t){theme=t;document.documentElement.dataset.theme=t==='light'?'light':'dark';$('theme').textContent=t==='light'?'☾':'☀';localStorage.setItem('theme',t);if(window.PLKApp&&PLKApp.setReaderTheme)PLKApp.setReaderTheme(t)}$('theme').onclick=()=>setTheme(theme==='dark'?'light':'dark');setTheme(theme);applyLanguage();render();
