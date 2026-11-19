@@ -231,7 +231,7 @@ public class PdfViewerActivity extends Activity {
             .load();
     }
 
-    private String uiText(String ukrainian, String polish) {\n        boolean polish = "pl".equals(getSharedPreferences("plk_settings", MODE_PRIVATE).getString("app_language", "pl"));\n        return polish ? polish : ukrainian;\n    }\n\n    private void applyPalette() {
+    private String uiText(String ukrainian, String polishText) {\n        boolean isPolish = "pl".equals(getSharedPreferences("plk_settings", MODE_PRIVATE).getString("app_language", "pl"));\n        return isPolish ? polishText : ukrainian;\n    }\n\n    private void applyPalette() {
         // AMOLED Glass palette: translucent floating surfaces over a clean canvas.
         if (dark) {
             bg = Color.rgb(4, 5, 9);
