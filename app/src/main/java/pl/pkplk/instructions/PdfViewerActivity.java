@@ -74,7 +74,7 @@ public class PdfViewerActivity extends Activity {
         title.setTypeface(null, android.graphics.Typeface.BOLD);
         title.setMaxLines(1);
         TextView subtitle = new TextView(this);
-        subtitle.setText("PDF  /  PKP PLK");
+        subtitle.setText("PKP PLK  •  ПЕРЕГЛЯДАЧ PDF");
         subtitle.setTextColor(muted);
         subtitle.setTextSize(10);
         subtitle.setLetterSpacing(0.08f);
@@ -122,8 +122,9 @@ public class PdfViewerActivity extends Activity {
         pageCountLabel = new TextView(this);
         pageCountLabel.setText("СТОРІНКА  /  —");
         pageCountLabel.setTextColor(muted);
-        pageCountLabel.setTextSize(11);
+        pageCountLabel.setTextSize(10);
         pageCountLabel.setTypeface(null, android.graphics.Typeface.BOLD);
+        pageCountLabel.setLetterSpacing(0.06f);
         pageBar.addView(pageCountLabel, new LinearLayout.LayoutParams(0, -2, 1));
 
         next = button("›", true);
@@ -134,9 +135,16 @@ public class PdfViewerActivity extends Activity {
         root.addView(pageBar, pageBarParams);
 
         loading = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-        loading.setIndeterminate(true);
+        loading.setIndeterminate(false);
+        loading.setMax(1000);
+        loading.setProgress(0);
         loading.setProgressTintList(android.content.res.ColorStateList.valueOf(accent));
-        root.addView(loading, new LinearLayout.LayoutParams(-1, dp(3)));
+        if (android.os.Build.VERSION.SDK_INT >= 21) {
+            loading.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(line));
+        }
+        LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(-1, dp(3));
+        progressParams.bottomMargin = dp(8);
+        root.addView(loading, progressParams);
 
         pdfView = new PDFView(this, null);
         pdfView.setBackgroundColor(pageCanvas);
@@ -204,8 +212,9 @@ public class PdfViewerActivity extends Activity {
             .onLoad(pages -> {
                 totalPages = pages;
                 documentReady = true;
-                loading.setVisibility(View.GONE);
-                pageCountLabel.setText("СТОРІНКА  /  " + pages);
+                loading.setVisibility(View.VISIBLE);
+                loading.setMax(pages);
+                pageCountLabel.setText("СТОРІНОК  /  " + pages);
                 int savedPage = readerState.getInt(pageStateKey, 0);
                 int restorePage = Math.max(0, Math.min(pages - 1, savedPage));
                 pdfView.post(() -> {
@@ -308,7 +317,8 @@ public class PdfViewerActivity extends Activity {
     private void updatePageControls(int page) {
         runOnUiThread(() -> {
             pageInput.setText(String.valueOf(page + 1));
-            pageCountLabel.setText("СТОРІНКА  /  " + totalPages);
+            pageCountLabel.setText("СТОРІНОК  /  " + totalPages);
+            if (totalPages > 0) loading.setProgress(page + 1);
             previous.setEnabled(page > 0);
             next.setEnabled(totalPages > 0 && page < totalPages - 1);
             previous.setAlpha(page > 0 ? 1f : .38f);
