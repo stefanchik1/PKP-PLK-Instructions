@@ -1,6 +1,7 @@
 package pl.pkplk.instructions;
 
 import android.app.Activity;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.content.res.Configuration;
 import android.os.Handler;
@@ -37,6 +38,13 @@ public class PdfViewerActivity extends Activity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.content.SharedPreferences orientationPrefs = getSharedPreferences("pdf_reader_state", MODE_PRIVATE);
+        String savedOrientation = orientationPrefs.getString("screen_orientation", "auto");
+        if ("portrait".equals(savedOrientation)) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        } else if ("landscape".equals(savedOrientation)) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        }
         dark = true;
         landscape = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
         applyPalette();
@@ -170,12 +178,27 @@ public class PdfViewerActivity extends Activity {
         });
         Button zoomIn = button("+", false);
         zoomIn.setOnClickListener(v -> zoomBy(1.25f));
+        Button rotate = button("↻", false);
+        rotate.setTextSize(22);
+        rotate.setContentDescription("Повернути та зафіксувати орієнтацію екрана");
+        rotate.setOnClickListener(v -> {
+            boolean goLandscape = getResources().getConfiguration().orientation != Configuration.ORIENTATION_LANDSCAPE;
+            String mode = goLandscape ? "landscape" : "portrait";
+            getSharedPreferences("pdf_reader_state", MODE_PRIVATE).edit()
+                .putString("screen_orientation", mode).apply();
+            setRequestedOrientation(goLandscape
+                ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        });
 
-        tools.addView(zoomOut, new LinearLayout.LayoutParams(dp(48), dp(44)));
+        tools.addView(zoomOut, new LinearLayout.LayoutParams(dp(44), dp(44)));
         LinearLayout.LayoutParams fitParams = new LinearLayout.LayoutParams(0, dp(44), 1f);
         fitParams.setMargins(dp(10), 0, dp(10), 0);
         tools.addView(fit, fitParams);
-        tools.addView(zoomIn, new LinearLayout.LayoutParams(dp(48), dp(44)));
+        tools.addView(zoomIn, new LinearLayout.LayoutParams(dp(44), dp(44)));
+        LinearLayout.LayoutParams rotateParams = new LinearLayout.LayoutParams(dp(44), dp(44));
+        rotateParams.leftMargin = dp(8);
+        tools.addView(rotate, rotateParams);
         LinearLayout.LayoutParams toolsParams = new LinearLayout.LayoutParams(-1, dp(60));
         toolsParams.topMargin = dp(10);
         root.addView(tools, toolsParams);
