@@ -47,6 +47,12 @@ public class MainActivity extends Activity {
     }
 
     private class AppBridge {
+        @JavascriptInterface public void setAppLanguage(String language) {
+            if ("pl".equals(language) || "uk".equals(language)) {
+                getSharedPreferences("plk_settings", MODE_PRIVATE).edit().putString("app_language", language).apply();
+            }
+        }
+
         @JavascriptInterface public void setReaderTheme(String theme) {
             if ("light".equals(theme) || "dark".equals(theme)) {
                 getSharedPreferences("plk_settings", MODE_PRIVATE).edit().putString("reader_theme", theme).apply();
