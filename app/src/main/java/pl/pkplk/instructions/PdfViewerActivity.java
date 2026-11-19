@@ -149,7 +149,7 @@ public class PdfViewerActivity extends Activity {
         zoomIn.setOnClickListener(v -> zoomBy(1.25f));
         Button rotate = button("↻", false);
         rotate.setTextSize(22);
-        rotate.setContentDescription("Повернути та зафіксувати орієнтацію екрана");
+        rotate.setContentDescription(uiText("Повернути та зафіксувати орієнтацію екрана", "Obróć i zablokuj orientację ekranu"));
         rotate.setOnClickListener(v -> {
             boolean goLandscape = getResources().getConfiguration().orientation != Configuration.ORIENTATION_LANDSCAPE;
             String mode = goLandscape ? "landscape" : "portrait";
@@ -179,7 +179,7 @@ public class PdfViewerActivity extends Activity {
         String path = getIntent().getStringExtra("pdf_path");
         if (path == null || path.trim().isEmpty() || !new File(path).isFile()) {
             loading.setVisibility(View.GONE);
-            Toast.makeText(this, "Файл PDF не знайдено", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, uiText("Файл PDF не знайдено", "Nie znaleziono pliku PDF"), Toast.LENGTH_LONG).show();
             return;
         }
         File file = new File(path);
@@ -222,16 +222,16 @@ public class PdfViewerActivity extends Activity {
             })
             .onError(error -> {
                 loading.setVisibility(View.GONE);
-                Toast.makeText(this, "Помилка читання PDF: " +
+                Toast.makeText(this, uiText("Помилка читання PDF: ", "Błąd odczytu PDF: ") +
                     (error.getMessage() == null ? "невідомо" : error.getMessage()),
                     Toast.LENGTH_LONG).show();
             })
             .onPageError((page, error) -> Toast.makeText(this,
-                "Не вдалося відобразити сторінку " + (page + 1), Toast.LENGTH_SHORT).show())
+                uiText("Не вдалося відобразити сторінку ", "Nie udało się wyświetlić strony ") + (page + 1), Toast.LENGTH_SHORT).show())
             .load();
     }
 
-    private void applyPalette() {
+    private String uiText(String ukrainian, String polish) {\n        boolean polish = "pl".equals(getSharedPreferences("plk_settings", MODE_PRIVATE).getString("app_language", "pl"));\n        return polish ? polish : ukrainian;\n    }\n\n    private void applyPalette() {
         // AMOLED Glass palette: translucent floating surfaces over a clean canvas.
         if (dark) {
             bg = Color.rgb(4, 5, 9);
