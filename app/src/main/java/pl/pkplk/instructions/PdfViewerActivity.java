@@ -82,7 +82,8 @@ public class PdfViewerActivity extends Activity {
         title.setTypeface(null, android.graphics.Typeface.BOLD);
         title.setMaxLines(1);
         TextView subtitle = new TextView(this);
-        subtitle.setText("PKP PLK  •  ПЕРЕГЛЯДАЧ PDF");
+        boolean polish = "pl".equals(getSharedPreferences("plk_settings", MODE_PRIVATE).getString("app_language", "pl"));
+        subtitle.setText(polish ? "PKP PLK  •  CZYTNIK PDF" : "PKP PLK  •  ПЕРЕГЛЯДАЧ PDF");
         subtitle.setTextColor(muted);
         subtitle.setTextSize(10);
         subtitle.setLetterSpacing(0.08f);
@@ -205,7 +206,7 @@ public class PdfViewerActivity extends Activity {
                 documentReady = true;
                 loading.setVisibility(View.VISIBLE);
                 loading.setMax(pages);
-                pageCountLabel.setText("СТОРІНОК  /  " + pages);
+                pageCountLabel.setText(("pl".equals(getSharedPreferences("plk_settings", MODE_PRIVATE).getString("app_language", "pl")) ? "STRON  /  " : "СТОРІНОК  /  ") + pages);
                 int savedPage = readerState.getInt(pageStateKey, 0);
                 int restorePage = Math.max(0, Math.min(pages - 1, savedPage));
                 pdfView.post(() -> {
