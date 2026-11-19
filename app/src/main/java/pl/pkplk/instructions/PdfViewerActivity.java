@@ -120,6 +120,10 @@ public class PdfViewerActivity extends Activity {
         pdfView = new PDFView(this, null);
         pdfView.setBackgroundColor(pageCanvas);
         root.addView(pdfView, new LinearLayout.LayoutParams(-1, 0, 1));
+        LinearLayout.LayoutParams pageBarParams = new LinearLayout.LayoutParams(-2, -2);
+        pageBarParams.gravity = Gravity.CENTER_HORIZONTAL;
+        pageBarParams.topMargin = dp(8);
+        pageBarParams.bottomMargin = dp(10);
         root.addView(pageBar, pageBarParams);
 
         tools = new LinearLayout(this);
